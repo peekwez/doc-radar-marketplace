@@ -220,25 +220,45 @@ python3 hash_check.py --check-only --content "..."
 python3 hash_check.py --content "..."
 ```
 
+### Fix 0 — Append-Only JSONL with Schema Headers (all `.tracker/*.jsonl` files)
+
+All JSONL tracker files follow two invariants:
+
+1. **Line 1 is always a schema record**, written once at file creation:
+   ```json
+   {"_type": "schema", "version": "1.0", "file": "<filename>.jsonl", "created_at": "<ISO>"}
+   ```
+2. **All subsequent writes are append-only** — no file is ever rewritten in place.
+
+State is resolved by reading all records and taking the latest record per key (`sha256` for `runs.jsonl` and `seen_hashes.jsonl`, `run_id` for `pending.jsonl`). This makes files safe for concurrent access and provides a full audit trail.
+
+`update_log.py` is updated to append an `_type: "update"` record instead of rewriting. `checkpoint.py` appends stage records; readers resolve the current stage by taking the latest entry per `run_id`.
+
 ### Fix 2 — Pipeline Checkpointing (new `scripts/checkpoint.py` + `.tracker/pending.jsonl`)
 
 New checkpoint file tracks per-doc pipeline state. Each doc writes a checkpoint after each stage and updates it on completion.
 
-**`pending.jsonl` record format:**
+**`pending.jsonl` schema entry (line 1, written once at creation):**
+```json
+{"_type": "schema", "version": "1.0", "file": "pending.jsonl", "created_at": "<ISO>"}
+```
+
+**Subsequent records — appended, latest per `run_id` wins:**
 ```json
 {
-  "run_id": "uuid4",
-  "sha256": "...",
-  "doc_ref": "...",
-  "doc_type": "...",
+  "_type":     "checkpoint",
+  "run_id":    "uuid4",
+  "sha256":    "...",
+  "doc_ref":   "...",
+  "doc_type":  "...",
   "source_id": "...",
-  "stage": "detected | extracted | scheduled | complete",
+  "stage":     "detected | extracted | scheduled | complete",
   "timestamp": "ISO 8601",
-  "error": null
+  "error":     null
 }
 ```
 
-Only items not yet at `complete` remain actionable. On SessionStart, any items stuck at `detected` or `extracted` are surfaced for retry.
+Items not yet at `complete` (resolved as latest record per `run_id`) are surfaced for retry on next session. The same schema header pattern applies to all `.tracker/*.jsonl` files.
 
 **`scripts/checkpoint.py` interface:**
 ```bash

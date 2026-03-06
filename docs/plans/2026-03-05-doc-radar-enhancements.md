@@ -12,6 +12,186 @@
 
 ---
 
+## Task 0: Add shared JSONL utilities — schema headers + append-only pattern
+
+**Why:** Every `.tracker/*.jsonl` file must have a schema record as line 1 (written once at creation) and thereafter be append-only. State is resolved by reading all records and taking the latest per key. This prevents silent data loss from partial writes and provides a full audit trail.
+
+**Files:**
+- Create: `scripts/jsonl_utils.py`
+- Create: `tests/test_jsonl_utils.py`
+
+---
+
+**Step 1: Write failing tests**
+
+Create `tests/test_jsonl_utils.py`:
+
+```python
+"""Tests for shared JSONL append-only utilities."""
+import json
+from pathlib import Path
+import sys
+sys.path.insert(0, str(Path(__file__).parent.parent / "scripts"))
+import jsonl_utils as ju
+
+
+def test_init_writes_schema_header(tmp_path):
+    """init_jsonl writes a schema record as line 1 and nothing else."""
+    f = tmp_path / "test.jsonl"
+    ju.init_jsonl(f, "test.jsonl")
+    lines = [l for l in f.read_text().splitlines() if l.strip()]
+    assert len(lines) == 1
+    rec = json.loads(lines[0])
+    assert rec["_type"] == "schema"
+    assert rec["file"] == "test.jsonl"
+    assert "created_at" in rec
+
+
+def test_init_is_idempotent(tmp_path):
+    """Calling init_jsonl twice does not duplicate the schema header."""
+    f = tmp_path / "test.jsonl"
+    ju.init_jsonl(f, "test.jsonl")
+    ju.init_jsonl(f, "test.jsonl")
+    lines = [l for l in f.read_text().splitlines() if l.strip()]
+    assert len(lines) == 1
+
+
+def test_append_record(tmp_path):
+    """append_record adds a record after the schema header."""
+    f = tmp_path / "test.jsonl"
+    ju.init_jsonl(f, "test.jsonl")
+    ju.append_record(f, {"key": "val"})
+    lines = [l for l in f.read_text().splitlines() if l.strip()]
+    assert len(lines) == 2
+    assert json.loads(lines[1])["key"] == "val"
+
+
+def test_read_records_skips_schema(tmp_path):
+    """read_records returns data records only, not the schema header."""
+    f = tmp_path / "test.jsonl"
+    ju.init_jsonl(f, "test.jsonl")
+    ju.append_record(f, {"_type": "data", "id": "1"})
+    ju.append_record(f, {"_type": "data", "id": "2"})
+    records = ju.read_records(f)
+    assert all(r["_type"] == "data" for r in records)
+    assert len(records) == 2
+
+
+def test_latest_per_key(tmp_path):
+    """latest_per_key returns the most recent record for each key value."""
+    f = tmp_path / "test.jsonl"
+    ju.init_jsonl(f, "test.jsonl")
+    ju.append_record(f, {"run_id": "r1", "stage": "detected"})
+    ju.append_record(f, {"run_id": "r1", "stage": "extracted"})
+    ju.append_record(f, {"run_id": "r2", "stage": "detected"})
+    result = ju.latest_per_key(f, "run_id")
+    assert result["r1"]["stage"] == "extracted"
+    assert result["r2"]["stage"] == "detected"
+```
+
+**Step 2: Run tests to verify they fail**
+
+```bash
+python -m pytest tests/test_jsonl_utils.py -v 2>&1 | head -20
+```
+
+Expected: FAIL — module doesn't exist yet.
+
+---
+
+**Step 3: Create `scripts/jsonl_utils.py`**
+
+```python
+#!/usr/bin/env python3
+"""
+jsonl_utils.py
+--------------
+Shared utilities for append-only JSONL tracker files.
+
+Every tracker file follows two invariants:
+  1. Line 1 is always a schema record (written once at creation).
+  2. All subsequent writes are append-only — files are never rewritten.
+
+State is resolved by reading all records and taking the latest per key.
+"""
+import json
+from datetime import datetime, timezone
+from pathlib import Path
+
+
+def init_jsonl(filepath: Path, filename: str) -> None:
+    """Create the file with a schema header if it does not already exist."""
+    if filepath.exists() and filepath.stat().st_size > 0:
+        return
+    filepath.parent.mkdir(parents=True, exist_ok=True)
+    schema = {
+        "_type":      "schema",
+        "version":    "1.0",
+        "file":       filename,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    }
+    with open(filepath, "w") as f:
+        f.write(json.dumps(schema) + "\n")
+
+
+def append_record(filepath: Path, record: dict) -> None:
+    """Append a single record to the JSONL file."""
+    filepath.parent.mkdir(parents=True, exist_ok=True)
+    with open(filepath, "a") as f:
+        f.write(json.dumps(record) + "\n")
+
+
+def read_records(filepath: Path) -> list[dict]:
+    """Read all non-schema records from a JSONL file."""
+    if not filepath.exists():
+        return []
+    records = []
+    for line in filepath.read_text().splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            rec = json.loads(line)
+            if rec.get("_type") != "schema":
+                records.append(rec)
+        except json.JSONDecodeError:
+            continue
+    return records
+
+
+def latest_per_key(filepath: Path, key: str) -> dict[str, dict]:
+    """Return a dict mapping key -> most recent record for that key value."""
+    result: dict[str, dict] = {}
+    for record in read_records(filepath):
+        k = record.get(key)
+        if k is not None:
+            result[k] = record  # later records overwrite earlier ones
+    return result
+```
+
+**Step 4: Run tests to verify they pass**
+
+```bash
+python -m pytest tests/test_jsonl_utils.py -v
+```
+
+Expected: 5 passed.
+
+**Step 5: Commit**
+
+```bash
+git add scripts/jsonl_utils.py tests/test_jsonl_utils.py
+git commit -m "feat: add jsonl_utils.py — schema headers + append-only pattern
+
+Shared utilities for all .tracker/*.jsonl files. Every file gets a
+schema header as line 1 (written once, idempotent). All subsequent
+writes are appends. State is resolved by latest-record-per-key.
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
+```
+
+---
+
 ## Task 1: Fix `hash_check.py` — add `--check-only` flag
 
 **Why:** Currently the hash is recorded as "seen" before calendar creation. If scheduling fails, the doc is permanently lost — marked seen but never scheduled. We need to separate "check for duplicate" from "record as seen".
@@ -200,44 +380,44 @@ def run_checkpoint(args: list[str], tmp_path: Path) -> dict:
     return json.loads(result.stdout)
 
 
-def read_pending(tmp_path: Path) -> list[dict]:
+def latest_stages(tmp_path: Path) -> dict[str, str]:
+    """Return {run_id: latest_stage} by reading pending.jsonl."""
+    import sys
+    sys.path.insert(0, str(Path(__file__).parent.parent / "scripts"))
+    import jsonl_utils as ju
     f = tmp_path / "pending.jsonl"
-    if not f.exists():
-        return []
-    return [json.loads(l) for l in f.read_text().splitlines() if l.strip()]
+    latest = ju.latest_per_key(f, "run_id")
+    return {k: v["stage"] for k, v in latest.items()}
 
 
 def test_write_detected_checkpoint(tmp_path):
-    """Writing a 'detected' checkpoint creates a pending.jsonl entry."""
+    """Writing a 'detected' checkpoint appends a record to pending.jsonl."""
     run_checkpoint([
         "--run-id", "run-001", "--sha256", "abc123", "--doc-ref", "INV-001",
         "--source-id", "gmail:msg1", "--stage", "detected"
     ], tmp_path)
-    entries = read_pending(tmp_path)
-    assert len(entries) == 1
-    assert entries[0]["stage"] == "detected"
-    assert entries[0]["run_id"] == "run-001"
+    stages = latest_stages(tmp_path)
+    assert stages.get("run-001") == "detected"
 
 
-def test_update_stage_in_place(tmp_path):
-    """Updating stage for same run_id replaces the entry, not appends."""
+def test_later_stage_wins_per_run_id(tmp_path):
+    """Appending a later stage for the same run_id resolves as latest stage."""
     base_args = ["--run-id", "run-002", "--sha256", "def456",
                  "--doc-ref", "PO-002", "--source-id", "gmail:msg2"]
     run_checkpoint(base_args + ["--stage", "detected"], tmp_path)
     run_checkpoint(base_args + ["--stage", "extracted"], tmp_path)
-    entries = read_pending(tmp_path)
-    assert len(entries) == 1
-    assert entries[0]["stage"] == "extracted"
+    stages = latest_stages(tmp_path)
+    assert stages.get("run-002") == "extracted"
 
 
-def test_complete_stage_removes_entry(tmp_path):
-    """Marking stage=complete removes the entry from pending.jsonl."""
+def test_complete_stage_resolves_as_complete(tmp_path):
+    """Marking stage=complete resolves as complete (retry.py will skip it)."""
     base_args = ["--run-id", "run-003", "--sha256", "ghi789",
                  "--doc-ref", "CTR-003", "--source-id", "file:/tmp/x.pdf"]
     run_checkpoint(base_args + ["--stage", "detected"], tmp_path)
     run_checkpoint(base_args + ["--stage", "complete"], tmp_path)
-    entries = read_pending(tmp_path)
-    assert entries == []
+    stages = latest_stages(tmp_path)
+    assert stages.get("run-003") == "complete"
 
 
 def test_multiple_docs_tracked_independently(tmp_path):
@@ -246,11 +426,18 @@ def test_multiple_docs_tracked_independently(tmp_path):
                     "--source-id", "s1", "--stage", "detected"], tmp_path)
     run_checkpoint(["--run-id", "r2", "--sha256", "h2", "--doc-ref", "D2",
                     "--source-id", "s2", "--stage", "extracted"], tmp_path)
-    entries = read_pending(tmp_path)
-    assert len(entries) == 2
-    stages = {e["run_id"]: e["stage"] for e in entries}
+    stages = latest_stages(tmp_path)
     assert stages["r1"] == "detected"
     assert stages["r2"] == "extracted"
+
+
+def test_schema_header_is_line_1(tmp_path):
+    """pending.jsonl always starts with a schema record."""
+    run_checkpoint(["--run-id", "r1", "--sha256", "h1", "--doc-ref", "D1",
+                    "--source-id", "s1", "--stage", "detected"], tmp_path)
+    lines = [l for l in (tmp_path / "pending.jsonl").read_text().splitlines() if l.strip()]
+    first = json.loads(lines[0])
+    assert first["_type"] == "schema"
 ```
 
 **Step 2: Run tests to verify they fail**
@@ -270,8 +457,9 @@ Expected: FAIL — script doesn't exist yet.
 """
 checkpoint.py
 -------------
-Writes and updates per-document pipeline checkpoints in .tracker/pending.jsonl.
-Items at stage 'complete' are removed. All other stages are upserted in place.
+Writes per-document pipeline checkpoints to .tracker/pending.jsonl.
+All writes are append-only. retry.py resolves current stage per run_id
+by taking the latest record. The 'complete' stage signals no further action.
 
 Usage:
     python3 checkpoint.py --run-id <uuid> --sha256 <hash> --doc-ref <ref> \
@@ -286,33 +474,16 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
-PLUGIN_DIR    = Path(__file__).parent.parent
+SCRIPT_DIR    = Path(__file__).parent
+sys.path.insert(0, str(SCRIPT_DIR))
+import jsonl_utils as ju
+
+PLUGIN_DIR    = SCRIPT_DIR.parent
 TRACKER_DIR   = Path(os.environ.get("CHECKPOINT_TRACKER_DIR", PLUGIN_DIR / ".tracker"))
 PENDING_LOG   = TRACKER_DIR / "pending.jsonl"
-
 VALID_STAGES  = {"detected", "extracted", "scheduled", "complete"}
 
 TRACKER_DIR.mkdir(parents=True, exist_ok=True)
-
-
-def read_pending() -> list[dict]:
-    if not PENDING_LOG.exists():
-        return []
-    entries = []
-    for line in PENDING_LOG.read_text().splitlines():
-        line = line.strip()
-        if line:
-            try:
-                entries.append(json.loads(line))
-            except json.JSONDecodeError:
-                continue
-    return entries
-
-
-def write_pending(entries: list[dict]) -> None:
-    tmp = PENDING_LOG.with_suffix(".jsonl.tmp")
-    tmp.write_text("\n".join(json.dumps(e) for e in entries) + ("\n" if entries else ""))
-    tmp.replace(PENDING_LOG)
 
 
 def main() -> None:
@@ -325,22 +496,22 @@ def main() -> None:
     parser.add_argument("--error",     default=None)
     args = parser.parse_args()
 
-    entries = read_pending()
-    # Remove any existing entry for this run_id
-    entries = [e for e in entries if e.get("run_id") != args.run_id]
+    # Ensure schema header exists (idempotent)
+    ju.init_jsonl(PENDING_LOG, "pending.jsonl")
 
-    if args.stage != "complete":
-        entries.append({
-            "run_id":    args.run_id,
-            "sha256":    args.sha256,
-            "doc_ref":   args.doc_ref,
-            "source_id": args.source_id,
-            "stage":     args.stage,
-            "timestamp": datetime.now(timezone.utc).isoformat(),
-            "error":     args.error,
-        })
-
-    write_pending(entries)
+    # Append checkpoint record — always append, never rewrite.
+    # retry.py resolves current stage by taking latest record per run_id.
+    record = {
+        "_type":     "checkpoint",
+        "run_id":    args.run_id,
+        "sha256":    args.sha256,
+        "doc_ref":   args.doc_ref,
+        "source_id": args.source_id,
+        "stage":     args.stage,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "error":     args.error,
+    }
+    ju.append_record(PENDING_LOG, record)
     print(json.dumps({"status": "ok", "run_id": args.run_id, "stage": args.stage}))
 
 
@@ -776,29 +947,20 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
-PLUGIN_DIR   = Path(__file__).parent.parent
+SCRIPT_DIR   = Path(__file__).parent
+sys.path.insert(0, str(SCRIPT_DIR))
+import jsonl_utils as ju
+
+PLUGIN_DIR   = SCRIPT_DIR.parent
 TRACKER_DIR  = Path(os.environ.get("RETRY_TRACKER_DIR", PLUGIN_DIR / ".tracker"))
 PENDING_LOG  = TRACKER_DIR / "pending.jsonl"
 ERROR_LOG    = TRACKER_DIR / "errors.jsonl"
 
 
-def read_jsonl(filepath: Path) -> list[dict]:
-    if not filepath.exists():
-        return []
-    entries = []
-    for line in filepath.read_text().splitlines():
-        line = line.strip()
-        if line:
-            try:
-                entries.append(json.loads(line))
-            except json.JSONDecodeError:
-                continue
-    return entries
-
-
 def main():
-    pending = [e for e in read_jsonl(PENDING_LOG)
-               if e.get("stage") != "complete"]
+    # Resolve latest stage per run_id — later appends win
+    latest = ju.latest_per_key(PENDING_LOG, "run_id")
+    pending = [rec for rec in latest.values() if rec.get("stage") != "complete"]
 
     if not pending:
         sys.exit(0)  # Nothing to retry — no output
@@ -1721,13 +1883,119 @@ Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
 
 | Task | Files | Tests |
 |------|-------|-------|
+| 0. jsonl_utils shared pattern | `scripts/jsonl_utils.py` | 5 tests |
 | 1. hash_check --check-only | `scripts/hash_check.py` | 3 tests |
-| 2. checkpoint.py | `scripts/checkpoint.py` | 4 tests |
+| 2. checkpoint.py (append-only) | `scripts/checkpoint.py` | 5 tests |
 | 3. gmail_scan query + timestamps | `scripts/gmail_scan.py`, `state.json` | 6 tests |
 | 4. retry.py | `scripts/retry.py` | 4 tests |
 | 5. hooks.json | `hooks/hooks.json` | — |
-| 6. legal-doc-detector skill | `skills/legal-doc-detector/SKILL.md` | — |
-| 7. doc-extractor skill | `skills/doc-extractor/SKILL.md` | — |
-| 8. deadline-scheduler skill | `skills/deadline-scheduler/SKILL.md` | — |
-| 9. doc-radar-agent | `agents/doc-radar-agent.md` | — |
-| 10. version bump + full suite | `plugin.json` | 17 total |
+| 6. update_log.py append-only | `scripts/update_log.py` | — |
+| 7. legal-doc-detector skill | `skills/legal-doc-detector/SKILL.md` | — |
+| 8. doc-extractor skill | `skills/doc-extractor/SKILL.md` | — |
+| 9. deadline-scheduler skill | `skills/deadline-scheduler/SKILL.md` | — |
+| 10. doc-radar-agent | `agents/doc-radar-agent.md` | — |
+| 11. version bump + full suite | `plugin.json` | 23 total |
+
+## Task 6 (inserted): Update `scripts/update_log.py` to append-only
+
+**Why:** `update_log.py` currently rewrites the entire `runs.jsonl` file to update one record. With the append-only pattern, it instead appends an `_type: "update"` record. Readers resolve final state by taking the latest record per `sha256`.
+
+**Files:**
+- Modify: `scripts/update_log.py`
+
+---
+
+**Step 1: Replace `update_log.py` implementation**
+
+Replace the file with the following:
+
+```python
+#!/usr/bin/env python3
+"""
+update_log.py
+-------------
+Appends an update record to .tracker/runs.jsonl after calendar events are
+created. Does NOT rewrite the file — readers resolve final state by taking
+the latest record per sha256.
+
+Usage:
+    python3 update_log.py --sha256 "<hash>" --event-ids "id1,id2,id3"
+    python3 update_log.py --sha256 "<hash>" --status "calendar_error" --error-msg "..."
+"""
+import argparse
+import json
+import os
+import sys
+from datetime import datetime, timezone
+from pathlib import Path
+
+SCRIPT_DIR  = Path(__file__).parent
+sys.path.insert(0, str(SCRIPT_DIR))
+import jsonl_utils as ju
+
+PLUGIN_DIR  = SCRIPT_DIR.parent
+TRACKER_DIR = PLUGIN_DIR / ".tracker"
+RUNS_LOG    = TRACKER_DIR / "runs.jsonl"
+ERROR_LOG   = TRACKER_DIR / "errors.jsonl"
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--sha256",    required=True)
+    parser.add_argument("--event-ids", default="")
+    parser.add_argument("--status",    default="complete",
+                        choices=["complete", "calendar_error",
+                                 "calendar_duplicate_skipped"])
+    parser.add_argument("--error-msg", default="")
+    args = parser.parse_args()
+
+    event_ids = [e.strip() for e in args.event_ids.split(",") if e.strip()]
+
+    # Ensure schema header exists
+    ju.init_jsonl(RUNS_LOG, "runs.jsonl")
+
+    # Append update record — never rewrite
+    record = {
+        "_type":              "update",
+        "sha256":             args.sha256.strip(),
+        "calendar_event_ids": event_ids,
+        "status":             args.status,
+        "completed_at":       datetime.now(timezone.utc).isoformat(),
+    }
+    if args.error_msg:
+        record["error"] = args.error_msg
+
+    ju.append_record(RUNS_LOG, record)
+
+    print(json.dumps({
+        "status":             args.status,
+        "sha256":             args.sha256,
+        "calendar_event_ids": event_ids,
+    }))
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except Exception as e:
+        ju.append_record(ERROR_LOG, {
+            "_type":     "error",
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "context":   "update_log.py:main",
+            "error":     str(e),
+        })
+        sys.exit(1)
+```
+
+**Step 2: Commit**
+
+```bash
+git add scripts/update_log.py
+git commit -m "feat: update_log.py — append-only, use jsonl_utils
+
+Replaces full-file rewrite with an appended _type:update record.
+Readers resolve final run status by taking latest record per sha256.
+Also initialises runs.jsonl schema header on first write.
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
+```
