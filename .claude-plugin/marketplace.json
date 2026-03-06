@@ -1,0 +1,13 @@
+{
+  "name": "doc-radar-marketplace",
+  "owner": {
+    "name": "Kwesi Mensah"
+  },
+  "plugins": [
+    {
+      "name": "doc-radar",
+      "source": "./doc-radar",
+      "description": "Scans Gmail and watched folders for legal/financial documents. Extracts dates, deduplicates via SHA-256, logs to JSONL, creates Google Calendar events with tiered reminders."
+    }
+  ]
+}

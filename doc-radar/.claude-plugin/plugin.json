@@ -5,7 +5,8 @@
   "author": {
     "name": "Kwesi Apponsah"
   },
-  "homepage": "https://github.com/peekwez/doc-radar",
+  "homepage": "https://github.com/peekwez/doc-radar-marketplace",
+  "repository": "https://github.com/peekwez/doc-radar-marketplace",
   "license": "MIT",
   "keywords": ["contracts", "invoices", "legal", "purchase-orders", "calendar", "automation", "gmail", "deduplication"]
 }

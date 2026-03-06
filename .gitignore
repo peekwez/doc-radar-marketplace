@@ -1,5 +1,11 @@
+# Generic patterns
 .DS_Store
-.pytest_cache
-.claude/settings.local.json
-__pycache__
-.tracker/*.jsonl
+**/.DS_Store
+*.pyc
+__pycache__/
+.env
+
+# doc-radar plugin-specific patterns
+doc-radar/.pytest_cache
+doc-radar/.claude/settings.local.json
+doc-radar/.tracker/*.jsonl
