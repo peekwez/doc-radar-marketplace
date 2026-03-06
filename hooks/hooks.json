@@ -1,0 +1,34 @@
+{
+  "description": "doc-radar event hooks",
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 ${CLAUDE_PLUGIN_ROOT}/scripts/gmail_scan.py 2>> ${CLAUDE_PLUGIN_ROOT}/.tracker/errors.jsonl"
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 ${CLAUDE_PLUGIN_ROOT}/scripts/retry.py 2>> ${CLAUDE_PLUGIN_ROOT}/.tracker/errors.jsonl"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 ${CLAUDE_PLUGIN_ROOT}/scripts/watch_folder.py --file \"$(echo $CLAUDE_HOOK_INPUT | python3 -c \"import sys,json; d=json.load(sys.stdin); print(d.get('tool_input',{}).get('file_path',''))\" 2>/dev/null)\" 2>> ${CLAUDE_PLUGIN_ROOT}/.tracker/errors.jsonl"
+          }
+        ]
+      }
+    ]
+  }
+}
