@@ -8,4 +8,5 @@ __pycache__/
 # doc-radar plugin-specific patterns
 doc-radar/.pytest_cache
 doc-radar/.claude/settings.local.json
-doc-radar/.tracker/*.jsonl
+doc-radar/.tracker/*
+!doc-radar/.tracker/.gitkeep

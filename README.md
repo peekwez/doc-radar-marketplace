@@ -4,8 +4,8 @@ A Claude Code plugin marketplace containing the `doc-radar` plugin.
 
 ## Plugins
 
-| Plugin | Description |
-|--------|-------------|
+| Plugin                    | Description                                                                                                                                                                   |
+| ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | [doc-radar](./doc-radar/) | Scans Gmail and watched folders for legal/financial documents. Extracts dates, deduplicates via SHA-256, logs to JSONL, creates Google Calendar events with tiered reminders. |
 
 ## Installation
