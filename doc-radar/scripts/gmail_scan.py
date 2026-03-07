@@ -105,8 +105,9 @@ DRIVE_MIME_TYPES = (
 
 def build_drive_query(after_date: str) -> str:
     """Build a Google Drive API query string for legal documents modified since after_date.
-    after_date format: YYYY-MM-DD (e.g. '2026-02-07')
+    after_date format: YYYY-MM-DD or YYYY/MM/DD (slashes are normalized automatically)
     """
+    after_date = after_date.replace("/", "-")
     return (
         f"({DRIVE_LEGAL_NAMES}) "
         f"AND ({DRIVE_MIME_TYPES}) "
@@ -188,7 +189,7 @@ NOTE: If gws returns HTTP 429 (rate limit):
   The next session will pick up missed messages via the date overlap buffer.
 """)
 
-    drive_query = build_drive_query(after_date.replace("/", "-"))
+    drive_query = build_drive_query(after_date)
     drive_params = json.dumps({
         "q": drive_query,
         "fields": "files(id,name,mimeType,modifiedTime,owners,webViewLink,size)",

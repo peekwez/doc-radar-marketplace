@@ -119,3 +119,10 @@ def test_gmail_scan_output_drive_source_is_google_drive(capsys, tmp_path):
     gmail_scan.main(state_file=tmp_path / "state.json")
     out = capsys.readouterr().out
     assert "google_drive" in out
+
+
+def test_build_drive_query_accepts_slash_date_format():
+    """build_drive_query should normalize YYYY/MM/DD to YYYY-MM-DD internally."""
+    query = mod.build_drive_query("2026/02/07")
+    assert "2026-02-07" in query
+    assert "trashed=false" in query
