@@ -340,21 +340,21 @@ Run ALL of these steps after every event is created successfully:
 
 **5a — Update run log with event IDs:**
 ```bash
-python3 ~/.claude/plugins/doc-radar/scripts/update_log.py \
+python3 ${CLAUDE_SKILL_DIR}/../../scripts/update_log.py \
   --sha256 "<hash>" \
   --event-ids "<id1>,<id2>,..."
 ```
 
 **5b — Record SHA-256 hash permanently** (first time the hash is recorded):
 ```bash
-python3 ~/.claude/plugins/doc-radar/scripts/hash_check.py \
+python3 ${CLAUDE_SKILL_DIR}/../../scripts/hash_check.py \
   --content "<raw_text>" \
   --source-id "<source_id>"
 ```
 
 **5c — Write complete checkpoint:**
 ```bash
-python3 ~/.claude/plugins/doc-radar/scripts/checkpoint.py \
+python3 ${CLAUDE_SKILL_DIR}/../../scripts/checkpoint.py \
   --run-id "<run_id>" \
   --sha256 "<hash>" \
   --doc-ref "<doc_ref>" \
@@ -368,7 +368,7 @@ python3 -c "
 import json
 from pathlib import Path
 from datetime import datetime, timezone
-f = Path('~/.claude/plugins/doc-radar/.tracker/state.json').expanduser()
+f = Path('${CLAUDE_SKILL_DIR}/../../.tracker/state.json')
 s = json.loads(f.read_text())
 s['last_scan_completed'] = datetime.now(timezone.utc).isoformat()
 f.write_text(json.dumps(s, indent=2))
@@ -388,7 +388,7 @@ If `gws calendar events insert` fails:
 5. Continue processing other documents
 
 ```bash
-python3 ~/.claude/plugins/doc-radar/scripts/checkpoint.py \
+python3 ${CLAUDE_SKILL_DIR}/../../scripts/checkpoint.py \
   --run-id "<run_id>" --sha256 "<hash>" --doc-ref "<doc_ref>" \
   --source-id "<source_id>" --stage scheduled \
   --error "gws calendar insert failed: <error message>"

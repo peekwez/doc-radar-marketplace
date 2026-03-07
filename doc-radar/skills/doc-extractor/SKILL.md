@@ -25,9 +25,9 @@ Before extracting anything, compute a SHA-256 hash of the document's raw
 content. Use the Python script `scripts/hash_check.py` for this:
 
 ```bash
-python3 ~/.claude/plugins/doc-radar/scripts/hash_check.py --check-only --content "<raw_text>"
+python3 ${CLAUDE_SKILL_DIR}/../../scripts/hash_check.py --check-only --content "<raw_text>"
 # or for a file:
-python3 ~/.claude/plugins/doc-radar/scripts/hash_check.py --check-only --file "/path/to/file"
+python3 ${CLAUDE_SKILL_DIR}/../../scripts/hash_check.py --check-only --file "/path/to/file"
 ```
 
 The script returns one of two responses:
@@ -190,7 +190,7 @@ populate this after creating events.
 After writing to runs.jsonl, write a pipeline checkpoint:
 
 ```bash
-python3 ~/.claude/plugins/doc-radar/scripts/checkpoint.py \
+python3 ${CLAUDE_SKILL_DIR}/../../scripts/checkpoint.py \
   --run-id "<run_id>" \
   --sha256 "<sha256>" \
   --doc-ref "<doc_ref or 'unknown'>" \
