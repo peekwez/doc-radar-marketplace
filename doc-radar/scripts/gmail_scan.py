@@ -25,8 +25,6 @@ RUNS_LOG    = TRACKER_DIR / "runs.jsonl"
 SKIP_LOG    = TRACKER_DIR / "skipped.jsonl"
 ERROR_LOG   = TRACKER_DIR / "errors.jsonl"
 
-TRACKER_DIR.mkdir(parents=True, exist_ok=True)
-
 # ── Gmail query terms ─────────────────────────────────────────────────────────
 LEGAL_POSITIVE_TERMS = (
     "agreement OR contract OR invoice OR \"purchase order\" OR \"PO#\" "
@@ -104,8 +102,8 @@ def log_error(context: str, error: str) -> None:
     })
 
 
-def main():
-    state                    = load_state()
+def main(state_file: Path = STATE_FILE):
+    state                    = load_state(state_file)
     after_date, before_date  = get_date_range(state)
     query                    = build_gmail_query(after_date, before_date)
     now_iso                  = datetime.now(timezone.utc).isoformat()
@@ -133,36 +131,36 @@ Date range      : {after_date} -> {before_date}
 Last scan start : {state.get('last_scan_started') or 'Never (first run)'}
 Last scan done  : {last_completed}
 
-ACTION REQUIRED — run these gws commands via Bash:
-
-Step 1 — List candidate messages:
+STEP 1 — Fetch candidate messages:
   {list_cmd}
 
-Step 2 — For each messageId returned, fetch full content:
+STEP 2 — For each messageId returned, fetch full content:
   {get_cmd}
 
-Step 3 — Download any attachments (PDF/DOCX):
+STEP 3 — Download any PDF or DOCX attachments:
   {attachment_cmd} > /tmp/attachment_<msgId>.<ext>
 
-For each email/attachment retrieved:
-1. Apply junk filter (see legal-doc-detector skill)
-2. Run hash_check.py --check-only to detect duplicates
-3. Run doc-extractor skill on each valid new document
-4. Write checkpoint: detected -> extracted -> scheduled
-5. Run deadline-scheduler skill to create calendar events
-6. Run hash_check.py (without --check-only) to record hash permanently
-7. Write checkpoint: complete
-8. Log all results to .tracker/runs.jsonl
+STEP 4 — For each retrieved email or attachment, invoke the skill chain:
 
-After ALL emails processed, update .tracker/state.json:
+  Invoke `doc-radar:legal-doc-detector` on the email content (and pass the
+  local attachment file path if one was downloaded). The skill chain handles
+  everything from that point: attachment reading, junk filtering,
+  deduplication, extraction, calendar scheduling, and hash recording.
+
+  DO NOT run scripts directly. The skill chain manages all sub-steps
+  (deduplication, checkpointing, hash recording) internally.
+
+After ALL emails are processed, update .tracker/state.json:
   Set last_scan_completed to: {now_iso}
 
-NOTE: If gws is not installed, run:
+NOTE: If gws is not installed:
   npm install -g @googleworkspace/cli && gws auth setup
 """)
 
+    # Ensure tracker dir exists before writing state
+    TRACKER_DIR.mkdir(parents=True, exist_ok=True)
     # Record scan start — Claude updates last_scan_completed after all docs processed
-    save_state_started(state, timestamp=now_iso)
+    save_state_started(state, state_file, timestamp=now_iso)
 
 
 if __name__ == "__main__":
