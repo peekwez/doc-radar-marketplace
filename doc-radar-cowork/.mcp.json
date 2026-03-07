@@ -7,10 +7,6 @@
     "google-calendar": {
       "type": "http",
       "url": "https://gcal.mcp.claude.com/mcp"
-    },
-    "google-drive": {
-      "type": "http",
-      "url": "https://drive.mcp.claude.com/mcp"
     }
   }
 }
