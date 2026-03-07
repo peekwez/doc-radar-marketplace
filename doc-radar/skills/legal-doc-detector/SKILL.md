@@ -102,6 +102,32 @@ If any signal is missing, skip and log to `.tracker/skipped.jsonl` with the miss
 
 ---
 
+## Attachment Handling
+
+When an email has a PDF, DOCX, or plain-text attachment downloaded to a local
+path (e.g. `/tmp/attachment_<msgId>.pdf`):
+
+1. Use the `Read` tool on the local file path to extract its text content.
+   Claude's built-in Read tool handles PDFs natively — no OCR service needed.
+2. Treat the extracted text as the document body for the Three-Signal Test
+   and document type detection.
+3. Pass both the email metadata (subject, sender, date) AND the extracted
+   attachment text to `doc-radar:doc-extractor` as the document content.
+
+If the `Read` tool cannot extract text (binary-only, encrypted, or corrupted
+file), log to `.tracker/skipped.jsonl`:
+```json
+{
+  "timestamp": "<ISO 8601 UTC>",
+  "source_id": "<messageId>",
+  "skip_reason": "unreadable_attachment",
+  "filename": "<attachment filename>"
+}
+```
+Then stop — do not invoke `doc-radar:doc-extractor` for this item.
+
+---
+
 ## Trigger Conditions
 
 Fire this skill automatically when:
