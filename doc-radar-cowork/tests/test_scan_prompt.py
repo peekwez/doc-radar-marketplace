@@ -94,3 +94,59 @@ def test_scan_prompt_notes_attachment_limitation(capsys, tmp_path):
     assert "attachment" in out.lower()
     # Must mention the limitation somewhere
     assert "not" in out.lower() or "limitation" in out.lower() or "no" in out.lower()
+
+
+def test_build_drive_query_contains_legal_name_terms():
+    """Drive query must include legal document name signals."""
+    query = mod.build_drive_query("2026-02-07")
+    assert "contract" in query
+    assert "invoice" in query
+    assert "NDA" in query
+
+
+def test_build_drive_query_filters_mime_types():
+    """Drive query must restrict to PDF, DOCX, and plain text."""
+    query = mod.build_drive_query("2026-02-07")
+    assert "application/pdf" in query
+    assert "openxmlformats" in query
+
+
+def test_build_drive_query_excludes_trashed():
+    query = mod.build_drive_query("2026-02-07")
+    assert "trashed=false" in query
+
+
+def test_build_drive_query_uses_after_date():
+    query = mod.build_drive_query("2026-02-07")
+    assert "2026-02-07" in query
+    assert "modifiedTime" in query
+
+
+def test_build_drive_query_accepts_slash_date_format():
+    """build_drive_query should normalize YYYY/MM/DD to YYYY-MM-DD internally."""
+    query = mod.build_drive_query("2026/02/07")
+    assert "2026-02-07" in query
+    assert "trashed=false" in query
+
+
+def test_scan_prompt_output_includes_drive_section(capsys, tmp_path):
+    import scan_prompt
+    scan_prompt.main(state_file=tmp_path / "state.json")
+    out = capsys.readouterr().out
+    assert "Google Drive" in out
+    assert "google_drive_search" in out
+    assert "google_drive_fetch" in out
+
+
+def test_scan_prompt_output_drive_source_is_google_drive(capsys, tmp_path):
+    import scan_prompt
+    scan_prompt.main(state_file=tmp_path / "state.json")
+    out = capsys.readouterr().out
+    assert "google_drive" in out
+
+
+def test_scan_prompt_drive_uses_no_gws(capsys, tmp_path):
+    import scan_prompt
+    scan_prompt.main(state_file=tmp_path / "state.json")
+    out = capsys.readouterr().out
+    assert "gws" not in out

@@ -77,6 +77,33 @@ def get_date_range(state: dict) -> tuple[str, str]:
     return after_dt.strftime("%Y/%m/%d"), now.strftime("%Y/%m/%d")
 
 
+DRIVE_LEGAL_NAMES = (
+    "name contains 'contract' OR name contains 'invoice' OR name contains 'NDA' "
+    "OR name contains 'agreement' OR name contains 'purchase order' OR name contains 'SOW' "
+    "OR name contains 'MSA' OR name contains 'lease' OR name contains 'retainer' "
+    "OR name contains 'amendment' OR name contains 'quotation'"
+)
+
+DRIVE_MIME_TYPES = (
+    "mimeType='application/pdf' "
+    "OR mimeType='application/vnd.openxmlformats-officedocument.wordprocessingml.document' "
+    "OR mimeType='text/plain'"
+)
+
+
+def build_drive_query(after_date: str) -> str:
+    """Build a Google Drive API query for legal documents modified since after_date.
+    after_date format: YYYY-MM-DD or YYYY/MM/DD (slashes are normalized automatically)
+    """
+    after_date = after_date.replace("/", "-")
+    return (
+        f"({DRIVE_LEGAL_NAMES}) "
+        f"AND ({DRIVE_MIME_TYPES}) "
+        f"AND modifiedTime > '{after_date}T00:00:00' "
+        f"AND trashed=false"
+    )
+
+
 def build_gmail_query(after_date: str, before_date: str) -> str:
     return (
         f"({LEGAL_POSITIVE_TERMS}) "
@@ -161,6 +188,49 @@ NOTE: If search_messages returns HTTP 429 (rate limit):
   Wait 60 seconds before retrying.
   Process only messages already fetched — do not re-fetch.
   The next session will pick up missed messages via the date overlap buffer.
+""")
+
+    drive_query = build_drive_query(after_date)
+
+    print(f"""
+=== DOC RADAR: Google Drive Scan ===
+Timestamp  : {now_iso}
+Date range : modified after {after_date.replace("/", "-")}
+
+STEP A — Search Google Drive for legal document candidates:
+
+  Call: google_drive_search(
+    api_query="{drive_query}",
+    order_by="modifiedTime desc",
+    page_size=50
+  )
+
+  This returns a list of files with their IDs, names, MIME types,
+  modification dates, and owners.
+
+STEP B — Fetch content for each file returned:
+
+  Call: google_drive_fetch(document_ids=["<fileId>", ...])
+
+  This returns the text content of each file directly — no download needed.
+  Pass up to 10 file IDs per call to avoid context overload.
+
+STEP C — For each file fetched, invoke the skill chain:
+
+  Invoke `doc-radar-cowork:legal-doc-detector` on the file content.
+  Set source='google_drive' and source_id='<fileId>' when passing to
+  doc-extractor. The Drive file URL is:
+    https://drive.google.com/file/d/<fileId>/view
+
+  DO NOT run scripts directly. The skill chain manages all sub-steps
+  (deduplication, checkpointing, hash recording) internally.
+
+NOTE: If google_drive_search is not available (tool not found):
+  Ensure the Google Drive connector is authorised in Claude settings.
+  The Drive connector is automatically available in the Claude app.
+
+NOTE: Files already processed are deduplicated via SHA-256. Re-scanning the
+  same file will produce a duplicate hash and be skipped automatically.
 """)
 
     # Record scan start — Claude updates last_scan_completed when done
