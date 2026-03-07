@@ -1,0 +1,12 @@
+{
+  "name": "doc-radar-cowork",
+  "description": "Scans Gmail and watched folders for legal and financially binding documents using native MCP connectors — no CLI required. Extracts key dates, deduplicates via SHA-256, logs to JSONL, and creates Google Calendar events with tiered reminders. Designed for the Claude desktop app (Cowork mode).",
+  "version": "1.0.0",
+  "author": {
+    "name": "Kwesi Apponsah"
+  },
+  "homepage": "https://github.com/peekwez/doc-radar-marketplace",
+  "repository": "https://github.com/peekwez/doc-radar-marketplace",
+  "license": "MIT",
+  "keywords": ["contracts", "invoices", "legal", "purchase-orders", "calendar", "automation", "gmail", "mcp", "cowork", "deduplication"]
+}

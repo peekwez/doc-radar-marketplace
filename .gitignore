@@ -10,3 +10,8 @@ doc-radar/.pytest_cache
 doc-radar/.claude/settings.local.json
 doc-radar/.tracker/*
 !doc-radar/.tracker/.gitkeep
+
+# doc-radar-cowork plugin-specific patterns
+doc-radar-cowork/.tracker/*
+!doc-radar-cowork/.tracker/.gitkeep
+!doc-radar-cowork/.tracker/state.json
