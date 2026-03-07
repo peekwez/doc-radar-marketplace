@@ -1,6 +1,18 @@
 # doc-radar-marketplace
 
-A plugin marketplace for automating legal and financial document tracking with Claude.
+doc-radar automatically monitors your Gmail inbox and a local watch folder for legal and financially binding documents. When it finds one, it extracts the key dates and parties, deduplicates it via SHA-256 so you never process the same document twice, logs the result to a JSONL audit trail, and creates Google Calendar events with tiered reminders so nothing slips through the cracks.
+
+**Document types covered:** contracts, MSAs, NDAs, SOWs, invoices, purchase orders, leases, retainers, amendments, quotations, and subscription renewals.
+
+**What gets created in your calendar:**
+- Contract / NDA / lease expiry with 30/14/7/1-day reminders
+- Auto-renewal notice windows (e.g. "send non-renewal notice by X")
+- Invoice payment due dates with 7/3/1-day reminders
+- SOW milestone dates and final delivery deadlines
+- Subscription cancel-by dates before auto-charge
+
+**Junk filtering built in:** marketing emails, CI/CD alerts, social notifications, and small consumer receipts are automatically skipped. A Three-Signal Test (named counterparty + financial obligation + actionable date) gates everything before processing.
+
 Two plugins are available — choose based on how you use Claude:
 
 ## Plugins
