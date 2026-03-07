@@ -85,6 +85,25 @@ uncertain, use `null` and note it in `extraction_notes`.
 }
 ```
 
+Additionally, append a `confidence` block to the extracted record:
+
+```json
+"confidence": {
+  "overall":      "high | medium | low",
+  "due_date":     "high | medium | low | null",
+  "expiry_date":  "high | medium | low | null",
+  "renewal_date": "high | medium | low | null",
+  "value_amount": "high | medium | low | null",
+  "parties":      "high | medium | low"
+}
+```
+
+**Confidence levels:**
+- `high` — field is explicitly stated in a clearly formatted way (e.g., "Due: 2026-04-15")
+- `medium` — field is inferred (e.g., "Net 30" from invoice date, or partial context)
+- `low` — field is guessed from ambiguous language; flag in `extraction_notes`
+- `null` — field not found; confidence is irrelevant
+
 ### Field Extraction Tips by Document Type
 
 **Invoice**: Focus on `due_date` (not invoice date), `value.amount`, `po_number`,
@@ -115,6 +134,27 @@ present ("cancel by", "to avoid charges", "must cancel before").
 
 ---
 
+## Step 2.5 — Null-Date Warning
+
+After extraction, check all actionable date fields:
+`effective_date`, `expiry_date`, `due_date`, `renewal_date`, `cancel_by_date`,
+`milestone_dates`.
+
+If every one of these is `null`, output a visible warning before continuing:
+
+```
+⚠ WARNING: No actionable dates extracted from [doc_type] [doc_ref]
+  (source: [source_id]). All date fields are null.
+  Calendar events cannot be created. Review extraction_notes for context.
+  Proceeding to log the record.
+```
+
+Still write the record to `runs.jsonl` with `status: "no_dates_extracted"`.
+Still invoke `doc-radar:deadline-scheduler` — it will create no events but
+completes the pipeline cleanly.
+
+---
+
 ## Step 3 — Write to Run Log
 
 Append the extracted record to `.tracker/runs.jsonl`:
@@ -135,7 +175,8 @@ Append the extracted record to `.tracker/runs.jsonl`:
   "source": "...",
   "source_id": "...",
   "calendar_event_ids": [],
-  "status": "extracted"
+  "status": "extracted",
+  "confidence": {"overall": "high", "due_date": "high", "parties": "high"}
 }
 ```
 
