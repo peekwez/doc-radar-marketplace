@@ -7,7 +7,7 @@ description: >
   PO, NDA, SOW, MSA, lease, retainer, amendment, quotation, or subscription
   renewal. Use PROACTIVELY whenever SessionStart hook injects Gmail scan
   results, or when a new file appears in the watched inbox folder.
-  Immediately chains to doc-extractor.
+  Immediately chains to doc-radar:doc-extractor.
 ---
 
 # Legal Document Detector
@@ -15,7 +15,7 @@ description: >
 ## Purpose
 Gate-keep what gets processed. Identify whether any document, email, or file
 in the current context is a legal or financially binding document. If yes,
-invoke the `doc-extractor` skill. If no, do nothing and do not log.
+invoke the `doc-radar:doc-extractor` skill. If no, do nothing and do not log.
 
 ---
 
@@ -140,7 +140,7 @@ Fire this skill automatically when:
 
 ## Output
 
-When a document passes the filter, immediately call the `doc-extractor` skill.
+When a document passes the filter, immediately call the `doc-radar:doc-extractor` skill.
 Pass the full available content: email subject, sender, body snippet, attachment
 name, and any text already extracted from the attachment.
 
