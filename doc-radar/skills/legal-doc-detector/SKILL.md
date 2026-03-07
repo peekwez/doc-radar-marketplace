@@ -65,6 +65,31 @@ Always use `--dry-run` before modifying (modify/label) operations.
 
 ---
 
+## Google Drive Access via gws
+
+To scan Drive for legal documents, use these gws commands via Bash:
+
+```bash
+# List legal document candidates modified since last scan
+gws drive files list \
+  --params '{"q":"<DRIVE_QUERY>","fields":"files(id,name,mimeType,modifiedTime,owners,webViewLink,size)","orderBy":"modifiedTime desc","pageSize":50}'
+
+# Download a file from Drive to a local path
+gws drive files get \
+  --params '{"fileId":"<fileId>","alt":"media"}' \
+  > /tmp/drive-<fileId>.<ext>
+```
+
+Use the `Read` tool on the downloaded local file path to extract its text content.
+Set `source='google_drive'` and `source_id='<fileId>'` when passing to `doc-radar:doc-extractor`.
+
+Supported MIME types to download:
+- `application/pdf` → `.pdf`
+- `application/vnd.openxmlformats-officedocument.wordprocessingml.document` → `.docx`
+- `text/plain` → `.txt`
+
+---
+
 ## Junk and Promotional Filter — SKIP ENTIRELY
 
 Do NOT process any email or document matching these patterns.
@@ -135,6 +160,7 @@ Fire this skill automatically when:
 2. A file is written to `~/legal-inbox/` (PostToolUse hook fires)
 3. User pastes document content or uploads a file directly in conversation
 4. Context contains phrases like "check contracts", "any new invoices", "process docs"
+5. SessionStart hook output contains Google Drive scan results
 
 ---
 

@@ -74,11 +74,16 @@ def key_date(r: dict):
 
 
 def gmail_link(r: dict) -> str:
-    if r.get("source") == "gmail" and r.get("source_id"):
-        url = f"https://mail.google.com/mail/u/0/#all/{r['source_id']}"
+    source    = r.get("source", "")
+    source_id = r.get("source_id", "")
+    if source == "gmail" and source_id:
+        url = f"https://mail.google.com/mail/u/0/#all/{source_id}"
         return f'<a href="{url}" target="_blank" class="text-blue-600 hover:underline text-xs">Open email ↗</a>'
-    elif r.get("source") == "file_drop":
-        return f'<span class="text-xs text-slate-500">{html_mod.escape(r.get("source_id", ""))}</span>'
+    elif source == "google_drive" and source_id:
+        url = f"https://drive.google.com/file/d/{source_id}/view"
+        return f'<a href="{url}" target="_blank" class="text-blue-600 hover:underline text-xs">Open in Drive ↗</a>'
+    elif source == "file_drop":
+        return f'<span class="text-xs text-slate-500">{html_mod.escape(source_id)}</span>'
     return '<span class="text-xs text-slate-400">Direct paste</span>'
 
 

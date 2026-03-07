@@ -165,6 +165,7 @@ SOURCE
 ──────
 [construct URL based on source field:]
   gmail        -> https://mail.google.com/mail/u/0/#all/[source_id]
+  google_drive -> https://drive.google.com/file/d/[source_id]/view
   file_drop    -> [source_id — full file path]
   direct_paste -> Pasted directly in conversation
 ```

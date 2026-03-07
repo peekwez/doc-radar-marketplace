@@ -89,6 +89,33 @@ def build_gmail_query(after_date: str, before_date: str) -> str:
     )
 
 
+DRIVE_LEGAL_NAMES = (
+    "name contains 'contract' OR name contains 'invoice' OR name contains 'NDA' "
+    "OR name contains 'agreement' OR name contains 'purchase order' OR name contains 'SOW' "
+    "OR name contains 'MSA' OR name contains 'lease' OR name contains 'retainer' "
+    "OR name contains 'amendment' OR name contains 'quotation'"
+)
+
+DRIVE_MIME_TYPES = (
+    "mimeType='application/pdf' "
+    "OR mimeType='application/vnd.openxmlformats-officedocument.wordprocessingml.document' "
+    "OR mimeType='text/plain'"
+)
+
+
+def build_drive_query(after_date: str) -> str:
+    """Build a Google Drive API query string for legal documents modified since after_date.
+    after_date format: YYYY-MM-DD or YYYY/MM/DD (slashes are normalized automatically)
+    """
+    after_date = after_date.replace("/", "-")
+    return (
+        f"({DRIVE_LEGAL_NAMES}) "
+        f"AND ({DRIVE_MIME_TYPES}) "
+        f"AND modifiedTime > '{after_date}T00:00:00' "
+        f"AND trashed=false"
+    )
+
+
 def append_jsonl(filepath: Path, record: dict) -> None:
     with open(filepath, "a") as f:
         f.write(json.dumps(record) + "\n")
@@ -160,6 +187,50 @@ NOTE: If gws returns HTTP 429 (rate limit):
   Wait 60 seconds before retrying the list command.
   Process only messages already fetched — do not re-fetch.
   The next session will pick up missed messages via the date overlap buffer.
+""")
+
+    drive_query = build_drive_query(after_date)
+    drive_params = json.dumps({
+        "q": drive_query,
+        "fields": "files(id,name,mimeType,modifiedTime,owners,webViewLink,size)",
+        "orderBy": "modifiedTime desc",
+        "pageSize": 50,
+    })
+
+    print(f"""
+=== DOC RADAR: Google Drive Scan ===
+Timestamp  : {now_iso}
+Date range : modified after {after_date.replace("/", "-")}
+
+STEP A — List legal document candidates from Google Drive:
+  gws drive files list --params '{drive_params}'
+
+  This returns a list of files with id, name, mimeType, modifiedTime,
+  owners, webViewLink, and size.
+
+STEP B — For each file returned, download content:
+  gws drive files get --params '{{"fileId":"<fileId>","alt":"media"}}' \\
+    > /tmp/drive-<fileId>.<ext>
+
+  Use the file's mimeType to determine the extension:
+    application/pdf                                            -> .pdf
+    application/vnd.openxmlformats-...docx                   -> .docx
+    text/plain                                                 -> .txt
+
+STEP C — For each downloaded file, invoke the skill chain:
+
+  Invoke `doc-radar:legal-doc-detector` on the file content.
+  Set source='google_drive' and source_id='<fileId>' when passing to
+  doc-extractor. The file's webViewLink can be used in calendar events.
+
+  DO NOT run scripts directly. The skill chain manages all sub-steps.
+
+NOTE: If gws drive returns HTTP 429 (rate limit):
+  Wait 60 seconds before retrying.
+  Process only files already downloaded — do not re-fetch.
+
+NOTE: Files already processed are deduplicated via SHA-256. Re-scanning the
+  same file will produce a duplicate hash and be skipped automatically.
 """)
 
     # Ensure tracker dir exists before writing state
