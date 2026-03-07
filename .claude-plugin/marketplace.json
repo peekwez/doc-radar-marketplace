@@ -3,11 +3,20 @@
   "owner": {
     "name": "Kwesi Apponsah"
   },
+  "metadata": {
+    "description": "Legal and financial document automation for Claude Code",
+    "version": "1.1.0"
+  },
   "plugins": [
     {
       "name": "doc-radar",
-      "source": "./doc-radar",
-      "description": "Scans Gmail and watched folders for legal/financial documents. Extracts dates, deduplicates via SHA-256, logs to JSONL, creates Google Calendar events with tiered reminders."
+      "source": {
+        "source": "url",
+        "url": "https://github.com/peekwez/doc-radar-marketplace.git"
+      },
+      "description": "Scans Gmail and watched folders for legal/financial documents. Extracts dates, deduplicates via SHA-256, logs to JSONL, creates Google Calendar events with tiered reminders.",
+      "version": "1.1.0",
+      "strict": true
     }
   ]
 }
