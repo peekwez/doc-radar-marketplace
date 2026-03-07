@@ -36,7 +36,7 @@ The script returns one of two responses:
 
 If duplicate: log to `.tracker/skipped.jsonl` with `skip_reason: "duplicate_hash"` and stop.
 
-Do NOT record the hash yet — it is recorded permanently only after successful calendar creation in doc-radar:deadline-scheduler (Step 5b).
+Do NOT record the hash yet — it is recorded permanently only after successful calendar creation in doc-radar-cowork:deadline-scheduler (Step 5b).
 
 ---
 
@@ -150,7 +150,7 @@ If every one of these is `null`, output a visible warning before continuing:
 ```
 
 Still write the record to `runs.jsonl` with `status: "no_dates_extracted"`.
-Still invoke `doc-radar:deadline-scheduler` — it will create no events but
+Still invoke `doc-radar-cowork:deadline-scheduler` — it will create no events but
 completes the pipeline cleanly.
 
 ---
@@ -202,4 +202,4 @@ python3 ${CLAUDE_SKILL_DIR}/../../scripts/checkpoint.py \
 
 ## Step 4 — Hand Off
 
-Pass the full extracted JSON to the `doc-radar:deadline-scheduler` skill.
+Pass the full extracted JSON to the `doc-radar-cowork:deadline-scheduler` skill.
