@@ -88,6 +88,11 @@ No emoji. Professional, scannable titles.
 Build the description as a self-contained briefing. Omit any section where
 all fields are null — do not leave blank headings.
 
+**Source URL construction rule:**
+Always include the SOURCE section. For Gmail sources:
+`"https://mail.google.com/mail/u/0/#all/" + source_id`
+This links the calendar event to the originating email for audit trail.
+
 ```
 DOCUMENT SUMMARY
 ────────────────
@@ -132,9 +137,15 @@ DOCUMENT DETAILS
 Type      : [doc_type]
 Reference : [doc_ref]
 Governing : [jurisdiction]
-Source    : [gmail message link or file path]
 SHA-256   : [first 12 chars of hash]
 Processed : [ISO timestamp]
+
+SOURCE
+──────
+[construct URL based on source field:]
+  gmail        -> https://mail.google.com/mail/u/0/#all/[source_id]
+  file_drop    -> [source_id — full file path]
+  direct_paste -> Pasted directly in conversation
 ```
 
 ---
