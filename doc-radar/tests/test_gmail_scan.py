@@ -72,3 +72,9 @@ def test_gmail_scan_warns_against_direct_scripts(capsys, tmp_path):
     gmail_scan.main(state_file=tmp_path / "state.json")
     out = capsys.readouterr().out
     assert "DO NOT run scripts directly" in out
+
+def test_gmail_scan_output_includes_rate_limit_guidance(capsys, tmp_path):
+    import gmail_scan
+    gmail_scan.main(state_file=tmp_path / "state.json")
+    out = capsys.readouterr().out
+    assert "429" in out or "rate limit" in out.lower()

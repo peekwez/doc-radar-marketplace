@@ -155,6 +155,11 @@ After ALL emails are processed, update .tracker/state.json:
 
 NOTE: If gws is not installed:
   npm install -g @googleworkspace/cli && gws auth setup
+
+NOTE: If gws returns HTTP 429 (rate limit):
+  Wait 60 seconds before retrying the list command.
+  Process only messages already fetched — do not re-fetch.
+  The next session will pick up missed messages via the date overlap buffer.
 """)
 
     # Ensure tracker dir exists before writing state
