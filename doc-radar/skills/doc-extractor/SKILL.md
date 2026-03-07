@@ -15,7 +15,7 @@ description: >
 Read a legal or financial document (email body, PDF text, DOCX content, or
 raw text), extract all structured fields, compute the content hash for
 deduplication, check the hash against the seen-hashes log, and either proceed
-to `deadline-scheduler` or abort as a duplicate.
+to `doc-radar:deadline-scheduler` or abort as a duplicate.
 
 ---
 
@@ -36,7 +36,7 @@ The script returns one of two responses:
 
 If duplicate: log to `.tracker/skipped.jsonl` with `skip_reason: "duplicate_hash"` and stop.
 
-Do NOT record the hash yet — it is recorded permanently only after successful calendar creation in deadline-scheduler (Step 5b).
+Do NOT record the hash yet — it is recorded permanently only after successful calendar creation in doc-radar:deadline-scheduler (Step 5b).
 
 ---
 
@@ -180,7 +180,7 @@ Append the extracted record to `.tracker/runs.jsonl`:
 }
 ```
 
-Leave `calendar_event_ids` as an empty array — `deadline-scheduler` will
+Leave `calendar_event_ids` as an empty array — `doc-radar:deadline-scheduler` will
 populate this after creating events.
 
 ---
@@ -202,4 +202,4 @@ python3 ${CLAUDE_SKILL_DIR}/../../scripts/checkpoint.py \
 
 ## Step 4 — Hand Off
 
-Pass the full extracted JSON to the `deadline-scheduler` skill.
+Pass the full extracted JSON to the `doc-radar:deadline-scheduler` skill.

@@ -2,18 +2,18 @@
 name: deadline-scheduler
 description: >
   Creates Google Calendar events from structured document data produced by
-  doc-extractor. Applies tiered reminder logic per document type (contracts,
+  doc-radar:doc-extractor. Applies tiered reminder logic per document type (contracts,
   invoices, POs, NDAs, SOWs, leases, amendments, subscription renewals).
   Checks for duplicate calendar events before creating. Updates the JSONL
   run log with created event IDs. Records SHA-256 hash permanently after
-  successful creation. Use PROACTIVELY immediately after doc-extractor
+  successful creation. Use PROACTIVELY immediately after doc-radar:doc-extractor
   returns extracted JSON.
 ---
 
 # Deadline Scheduler
 
 ## Purpose
-Take the structured JSON from `doc-extractor`, create the correct Google
+Take the structured JSON from `doc-radar:doc-extractor`, create the correct Google
 Calendar events with the right reminder windows, check for duplicates,
 write the event description as a self-contained briefing, record event IDs
 back to the run log, write the pipeline checkpoint to complete, and
