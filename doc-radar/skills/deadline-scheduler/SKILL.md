@@ -44,6 +44,27 @@ gws calendar events insert \
 
 ---
 
+## Dry-Run Mode
+
+If the user's request or context includes `--dry-run` or `dry_run: true`:
+
+1. Build all event payloads exactly as normal.
+2. Use `--dry-run` on every `gws calendar events insert` call.
+3. Output a preview table after all events are built:
+
+```
+DRY RUN PREVIEW — no events were created
+─────────────────────────────────────────
+Doc         : [doc_ref] ([doc_type])
+Events that would be created:
+  [title]  |  [date]  |  [reminders summary]
+```
+
+4. Do NOT write to `runs.jsonl`, record the hash, or write checkpoints.
+5. End with: "Dry run complete. Re-run without --dry-run to create these events."
+
+---
+
 ## Step 1 — Duplicate Calendar Event Check
 
 Before creating any event, search the calendar for an existing event:
