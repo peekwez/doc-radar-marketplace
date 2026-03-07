@@ -56,3 +56,25 @@ def test_save_state_started_sets_only_started(tmp_path):
     saved = json.loads(state_file.read_text())
     assert saved["last_scan_started"] == "2026-03-05T10:00:00Z"
     assert saved.get("last_scan_completed") is None
+
+
+def test_gmail_scan_output_uses_skill_chain(capsys, tmp_path):
+    import gmail_scan
+    gmail_scan.main(state_file=tmp_path / "state.json")
+    out = capsys.readouterr().out
+    assert "doc-radar:legal-doc-detector" in out
+    assert "hash_check.py" not in out
+    assert "doc-extractor skill" not in out
+    assert "deadline-scheduler skill" not in out
+
+def test_gmail_scan_warns_against_direct_scripts(capsys, tmp_path):
+    import gmail_scan
+    gmail_scan.main(state_file=tmp_path / "state.json")
+    out = capsys.readouterr().out
+    assert "DO NOT run scripts directly" in out
+
+def test_gmail_scan_output_includes_rate_limit_guidance(capsys, tmp_path):
+    import gmail_scan
+    gmail_scan.main(state_file=tmp_path / "state.json")
+    out = capsys.readouterr().out
+    assert "429" in out or "rate limit" in out.lower()

@@ -44,6 +44,27 @@ gws calendar events insert \
 
 ---
 
+## Dry-Run Mode
+
+If the user's request or context includes `--dry-run` or `dry_run: true`:
+
+1. Build all event payloads exactly as normal.
+2. Use `--dry-run` on every `gws calendar events insert` call.
+3. Output a preview table after all events are built:
+
+```
+DRY RUN PREVIEW — no events were created
+─────────────────────────────────────────
+Doc         : [doc_ref] ([doc_type])
+Events that would be created:
+  [title]  |  [date]  |  [reminders summary]
+```
+
+4. Do NOT write to `runs.jsonl`, record the hash, or write checkpoints.
+5. End with: "Dry run complete. Re-run without --dry-run to create these events."
+
+---
+
 ## Step 1 — Duplicate Calendar Event Check
 
 Before creating any event, search the calendar for an existing event:
@@ -87,6 +108,11 @@ No emoji. Professional, scannable titles.
 
 Build the description as a self-contained briefing. Omit any section where
 all fields are null — do not leave blank headings.
+
+**Source URL construction rule:**
+Always include the SOURCE section. For Gmail sources:
+`"https://mail.google.com/mail/u/0/#all/" + source_id`
+This links the calendar event to the originating email for audit trail.
 
 ```
 DOCUMENT SUMMARY
@@ -132,9 +158,15 @@ DOCUMENT DETAILS
 Type      : [doc_type]
 Reference : [doc_ref]
 Governing : [jurisdiction]
-Source    : [gmail message link or file path]
 SHA-256   : [first 12 chars of hash]
 Processed : [ISO timestamp]
+
+SOURCE
+──────
+[construct URL based on source field:]
+  gmail        -> https://mail.google.com/mail/u/0/#all/[source_id]
+  file_drop    -> [source_id — full file path]
+  direct_paste -> Pasted directly in conversation
 ```
 
 ---
@@ -308,21 +340,21 @@ Run ALL of these steps after every event is created successfully:
 
 **5a — Update run log with event IDs:**
 ```bash
-python3 ~/.claude/plugins/doc-radar/scripts/update_log.py \
+python3 ${CLAUDE_SKILL_DIR}/../../scripts/update_log.py \
   --sha256 "<hash>" \
   --event-ids "<id1>,<id2>,..."
 ```
 
 **5b — Record SHA-256 hash permanently** (first time the hash is recorded):
 ```bash
-python3 ~/.claude/plugins/doc-radar/scripts/hash_check.py \
+python3 ${CLAUDE_SKILL_DIR}/../../scripts/hash_check.py \
   --content "<raw_text>" \
   --source-id "<source_id>"
 ```
 
 **5c — Write complete checkpoint:**
 ```bash
-python3 ~/.claude/plugins/doc-radar/scripts/checkpoint.py \
+python3 ${CLAUDE_SKILL_DIR}/../../scripts/checkpoint.py \
   --run-id "<run_id>" \
   --sha256 "<hash>" \
   --doc-ref "<doc_ref>" \
@@ -336,7 +368,7 @@ python3 -c "
 import json
 from pathlib import Path
 from datetime import datetime, timezone
-f = Path('~/.claude/plugins/doc-radar/.tracker/state.json').expanduser()
+f = Path('${CLAUDE_SKILL_DIR}/../../.tracker/state.json')
 s = json.loads(f.read_text())
 s['last_scan_completed'] = datetime.now(timezone.utc).isoformat()
 f.write_text(json.dumps(s, indent=2))
@@ -356,7 +388,7 @@ If `gws calendar events insert` fails:
 5. Continue processing other documents
 
 ```bash
-python3 ~/.claude/plugins/doc-radar/scripts/checkpoint.py \
+python3 ${CLAUDE_SKILL_DIR}/../../scripts/checkpoint.py \
   --run-id "<run_id>" --sha256 "<hash>" --doc-ref "<doc_ref>" \
   --source-id "<source_id>" --stage scheduled \
   --error "gws calendar insert failed: <error message>"

@@ -62,3 +62,19 @@ def test_latest_record_per_run_id_wins(tmp_path):
     ])
     output = run_retry(tmp_path)
     assert output.strip() == ""
+
+
+def test_retry_output_uses_namespaced_skills(tmp_path, monkeypatch, capsys):
+    import retry
+    write_pending(tmp_path, [
+        {"_type": "checkpoint", "run_id": "abc123", "sha256": "abc", "doc_ref": "INV-001",
+         "source_id": "gmail:msgid", "stage": "extracted",
+         "timestamp": "2026-03-06T00:00:00+00:00", "error": None},
+    ])
+    monkeypatch.setenv("RETRY_TRACKER_DIR", str(tmp_path))
+    retry.main()
+    out = capsys.readouterr().out
+    assert "doc-radar:doc-extractor" in out
+    assert "doc-radar:deadline-scheduler" in out
+    assert "DO NOT run scripts directly" in out
+    assert "-> deadline-scheduler ->" not in out

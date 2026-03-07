@@ -21,13 +21,15 @@ sys.path.insert(0, str(SCRIPT_DIR))
 import jsonl_utils as ju
 
 PLUGIN_DIR  = SCRIPT_DIR.parent
-TRACKER_DIR = Path(os.environ.get("RETRY_TRACKER_DIR", str(PLUGIN_DIR / ".tracker")))
-PENDING_LOG = TRACKER_DIR / "pending.jsonl"
 
 
 def main():
+    # Re-resolve tracker dir at call time so monkeypatching env works in tests
+    tracker_dir = Path(os.environ.get("RETRY_TRACKER_DIR", str(PLUGIN_DIR / ".tracker")))
+    pending_log = tracker_dir / "pending.jsonl"
+
     # Resolve latest stage per run_id — later appends win
-    latest = ju.latest_per_key(PENDING_LOG, "run_id")
+    latest = ju.latest_per_key(pending_log, "run_id")
     pending = [rec for rec in latest.values() if rec.get("stage") != "complete"]
 
     if not pending:
@@ -42,9 +44,11 @@ def main():
         f"Items pending : {len(pending)}",
         "",
         "The following documents were partially processed in a previous session.",
-        "Process each through the pipeline starting from their current stage:",
-        "  extracted -> deadline-scheduler -> checkpoint complete -> record hash",
-        "  detected  -> doc-extractor -> deadline-scheduler -> checkpoint complete -> record hash",
+        "For each item, invoke the skill chain starting from its current stage:",
+        "  stage=detected   ->  invoke `doc-radar:doc-extractor`",
+        "  stage=extracted  ->  invoke `doc-radar:deadline-scheduler`",
+        "",
+        "DO NOT run scripts directly. The skills handle all pipeline steps.",
         "",
     ]
 

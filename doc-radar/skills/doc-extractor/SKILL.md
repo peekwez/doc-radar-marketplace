@@ -25,9 +25,9 @@ Before extracting anything, compute a SHA-256 hash of the document's raw
 content. Use the Python script `scripts/hash_check.py` for this:
 
 ```bash
-python3 ~/.claude/plugins/doc-radar/scripts/hash_check.py --check-only --content "<raw_text>"
+python3 ${CLAUDE_SKILL_DIR}/../../scripts/hash_check.py --check-only --content "<raw_text>"
 # or for a file:
-python3 ~/.claude/plugins/doc-radar/scripts/hash_check.py --check-only --file "/path/to/file"
+python3 ${CLAUDE_SKILL_DIR}/../../scripts/hash_check.py --check-only --file "/path/to/file"
 ```
 
 The script returns one of two responses:
@@ -85,6 +85,25 @@ uncertain, use `null` and note it in `extraction_notes`.
 }
 ```
 
+Additionally, append a `confidence` block to the extracted record:
+
+```json
+"confidence": {
+  "overall":      "high | medium | low",
+  "due_date":     "high | medium | low | null",
+  "expiry_date":  "high | medium | low | null",
+  "renewal_date": "high | medium | low | null",
+  "value_amount": "high | medium | low | null",
+  "parties":      "high | medium | low"
+}
+```
+
+**Confidence levels:**
+- `high` — field is explicitly stated in a clearly formatted way (e.g., "Due: 2026-04-15")
+- `medium` — field is inferred (e.g., "Net 30" from invoice date, or partial context)
+- `low` — field is guessed from ambiguous language; flag in `extraction_notes`
+- `null` — field not found; confidence is irrelevant
+
 ### Field Extraction Tips by Document Type
 
 **Invoice**: Focus on `due_date` (not invoice date), `value.amount`, `po_number`,
@@ -115,6 +134,27 @@ present ("cancel by", "to avoid charges", "must cancel before").
 
 ---
 
+## Step 2.5 — Null-Date Warning
+
+After extraction, check all actionable date fields:
+`effective_date`, `expiry_date`, `due_date`, `renewal_date`, `cancel_by_date`,
+`milestone_dates`.
+
+If every one of these is `null`, output a visible warning before continuing:
+
+```
+⚠ WARNING: No actionable dates extracted from [doc_type] [doc_ref]
+  (source: [source_id]). All date fields are null.
+  Calendar events cannot be created. Review extraction_notes for context.
+  Proceeding to log the record.
+```
+
+Still write the record to `runs.jsonl` with `status: "no_dates_extracted"`.
+Still invoke `doc-radar:deadline-scheduler` — it will create no events but
+completes the pipeline cleanly.
+
+---
+
 ## Step 3 — Write to Run Log
 
 Append the extracted record to `.tracker/runs.jsonl`:
@@ -135,7 +175,8 @@ Append the extracted record to `.tracker/runs.jsonl`:
   "source": "...",
   "source_id": "...",
   "calendar_event_ids": [],
-  "status": "extracted"
+  "status": "extracted",
+  "confidence": {"overall": "high", "due_date": "high", "parties": "high"}
 }
 ```
 
@@ -149,7 +190,7 @@ populate this after creating events.
 After writing to runs.jsonl, write a pipeline checkpoint:
 
 ```bash
-python3 ~/.claude/plugins/doc-radar/scripts/checkpoint.py \
+python3 ${CLAUDE_SKILL_DIR}/../../scripts/checkpoint.py \
   --run-id "<run_id>" \
   --sha256 "<sha256>" \
   --doc-ref "<doc_ref or 'unknown'>" \
