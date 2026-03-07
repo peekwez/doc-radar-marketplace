@@ -195,7 +195,20 @@ def generate(runs_path: Path = None, output_path: Path = None) -> None:
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Doc Radar Dashboard</title>
+  <title>Document Radar Dashboard</title>
+  <script>
+    tailwind.config = {{
+      safelist: [
+        'bg-blue-100','text-blue-800','bg-purple-100','text-purple-800',
+        'bg-yellow-100','text-yellow-800','bg-green-100','text-green-800',
+        'bg-orange-100','text-orange-800','bg-pink-100','text-pink-800',
+        'bg-gray-100','text-gray-800','text-gray-500','text-gray-600','text-gray-700',
+        'bg-red-100','text-red-800','text-red-600',
+        'bg-teal-100','text-teal-800','bg-indigo-100','text-indigo-800',
+        'line-through','opacity-50','text-amber-600','font-medium',
+      ]
+    }}
+  </script>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
   <style>
@@ -215,25 +228,25 @@ def generate(runs_path: Path = None, output_path: Path = None) -> None:
   <!-- Sidebar -->
   <aside class="w-56 bg-white border-r border-slate-200 flex flex-col shrink-0">
     <div class="h-14 flex items-center px-5 border-b border-slate-200">
-      <span class="text-lg font-semibold tracking-tight">Doc Radar</span>
+      <span class="text-lg font-semibold tracking-tight">Document Radar</span>
     </div>
-    <nav class="flex-1 px-3 py-4 space-y-1">
-      <a href="#" onclick="filterTable('all')" class="flex items-center gap-2 px-3 py-2 rounded-md bg-slate-100 text-slate-900 text-sm font-medium">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+    <nav class="flex-1 px-3 py-4 space-y-1" id="sideNav">
+      <a href="#" onclick="filterTable('all', this); return false;" class="nav-item flex items-center gap-2 px-3 py-2 rounded-md bg-slate-100 text-slate-900 text-sm font-medium">
+        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
         Overview
       </a>
-      <a href="#upcoming" onclick="filterTable('upcoming')" class="flex items-center gap-2 px-3 py-2 rounded-md text-slate-600 hover:bg-slate-50 text-sm">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+      <a href="#" onclick="filterTable('upcoming', this); return false;" class="nav-item flex items-center gap-2 px-3 py-2 rounded-md text-slate-600 hover:bg-slate-50 text-sm">
+        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
         Upcoming
         <span class="ml-auto text-xs bg-slate-200 rounded-full px-2 py-0.5">{stats['upcoming']}</span>
       </a>
-      <a href="#all" onclick="filterTable('all')" class="flex items-center gap-2 px-3 py-2 rounded-md text-slate-600 hover:bg-slate-50 text-sm">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+      <a href="#" onclick="filterTable('all', this); return false;" class="nav-item flex items-center gap-2 px-3 py-2 rounded-md text-slate-600 hover:bg-slate-50 text-sm">
+        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
         All Documents
         <span class="ml-auto text-xs bg-slate-200 rounded-full px-2 py-0.5">{stats['total']}</span>
       </a>
-      <a href="#archived" onclick="filterTable('archived')" class="flex items-center gap-2 px-3 py-2 rounded-md text-slate-600 hover:bg-slate-50 text-sm">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/></svg>
+      <a href="#" onclick="filterTable('archived', this); return false;" class="nav-item flex items-center gap-2 px-3 py-2 rounded-md text-slate-600 hover:bg-slate-50 text-sm">
+        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/></svg>
         Archived
         <span class="ml-auto text-xs bg-slate-200 rounded-full px-2 py-0.5">{stats['archived']}</span>
       </a>
@@ -284,12 +297,12 @@ def generate(runs_path: Path = None, output_path: Path = None) -> None:
         <div class="card col-span-2 p-5">
           <h2 class="text-sm font-semibold mb-1">Documents Processed</h2>
           <p class="text-xs text-slate-400 mb-4">Last 6 months</p>
-          <canvas id="barChart" height="160"></canvas>
+          <div style="position:relative;height:200px"><canvas id="barChart"></canvas></div>
         </div>
         <div class="card p-5">
           <h2 class="text-sm font-semibold mb-1">By Document Type</h2>
           <p class="text-xs text-slate-400 mb-4">All time</p>
-          <canvas id="donutChart" height="160"></canvas>
+          <div style="position:relative;height:200px"><canvas id="donutChart"></canvas></div>
         </div>
       </div>
 
@@ -371,7 +384,17 @@ function searchTable(q) {{
 }}
 
 // Sidebar filter
-function filterTable(mode) {{
+function filterTable(mode, el) {{
+  // Update active nav highlight
+  document.querySelectorAll('#sideNav .nav-item').forEach(a => {{
+    a.classList.remove('bg-slate-100', 'text-slate-900', 'font-medium');
+    a.classList.add('text-slate-600');
+  }});
+  if (el) {{
+    el.classList.remove('text-slate-600');
+    el.classList.add('bg-slate-100', 'text-slate-900', 'font-medium');
+  }}
+
   const tbody = document.getElementById('tableBody');
   if (mode === 'all') {{ tbody.innerHTML = ALL_ROWS; return; }}
   const parser = new DOMParser();
@@ -386,14 +409,15 @@ function filterTable(mode) {{
     if (mode === 'archived') return status.includes('archived');
     return true;
   }});
-  tbody.innerHTML = keep.map(r => r.outerHTML).join('');
+  tbody.innerHTML = keep.length ? keep.map(r => r.outerHTML).join('') :
+    '<tr><td colspan="7" class="text-center py-10 text-slate-400">No documents match this filter.</td></tr>';
 }}
 
 // Export JSON
 function exportJSON() {{
   const a = document.createElement('a');
   a.href = 'data:application/json,' + encodeURIComponent(JSON.stringify(CHART_DATA, null, 2));
-  a.download = 'doc-radar-data.json';
+  a.download = 'document-radar-data.json';
   a.click();
 }}
 </script>
