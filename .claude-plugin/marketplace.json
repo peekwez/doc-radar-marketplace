@@ -10,9 +10,18 @@
   "plugins": [
     {
       "name": "doc-radar",
-      "source": "doc-radar",
+      "source": "./doc-radar",
       "description": "Scans Gmail and watched folders for legal/financial documents. Extracts dates, deduplicates via SHA-256, logs to JSONL, creates Google Calendar events with tiered reminders.",
       "version": "1.1.0",
+      "author": {
+        "name": "Kwesi Apponsah"
+      }
+    },
+    {
+      "name": "doc-radar-cowork",
+      "source": "./doc-radar-cowork",
+      "description": "MCP-native version of doc-radar for the Claude desktop app. Scans Gmail and watched folders for legal/financial documents using Gmail, Calendar, and Drive connectors. No CLI installation required.",
+      "version": "1.0.0",
       "author": {
         "name": "Kwesi Apponsah"
       }
