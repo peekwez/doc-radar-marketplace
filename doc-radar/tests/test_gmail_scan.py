@@ -78,3 +78,44 @@ def test_gmail_scan_output_includes_rate_limit_guidance(capsys, tmp_path):
     gmail_scan.main(state_file=tmp_path / "state.json")
     out = capsys.readouterr().out
     assert "429" in out or "rate limit" in out.lower()
+
+
+def test_build_drive_query_contains_legal_name_terms():
+    """Drive query must include legal document name signals."""
+    query = mod.build_drive_query("2026-02-07")
+    assert "contract" in query
+    assert "invoice" in query
+    assert "NDA" in query
+
+
+def test_build_drive_query_filters_mime_types():
+    """Drive query must restrict to PDF, DOCX, and plain text."""
+    query = mod.build_drive_query("2026-02-07")
+    assert "application/pdf" in query
+    assert "openxmlformats" in query
+
+
+def test_build_drive_query_excludes_trashed():
+    query = mod.build_drive_query("2026-02-07")
+    assert "trashed=false" in query
+
+
+def test_build_drive_query_uses_after_date():
+    query = mod.build_drive_query("2026-02-07")
+    assert "2026-02-07" in query
+    assert "modifiedTime" in query
+
+
+def test_gmail_scan_output_includes_drive_section(capsys, tmp_path):
+    import gmail_scan
+    gmail_scan.main(state_file=tmp_path / "state.json")
+    out = capsys.readouterr().out
+    assert "Google Drive" in out
+    assert "gws drive files list" in out
+
+
+def test_gmail_scan_output_drive_source_is_google_drive(capsys, tmp_path):
+    import gmail_scan
+    gmail_scan.main(state_file=tmp_path / "state.json")
+    out = capsys.readouterr().out
+    assert "google_drive" in out
