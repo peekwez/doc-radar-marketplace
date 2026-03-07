@@ -70,6 +70,30 @@ accessible via the `Read` tool — use that for local file content.
 
 ---
 
+## Google Drive Access via MCP Connector
+
+Use the Google Drive tools directly — no CLI or Bash required. These tools are
+injected automatically when the Google Drive connector is enabled in Claude settings.
+
+```
+# Search for legal document candidates
+google_drive_search(
+  api_query="<DRIVE_QUERY>",
+  order_by="modifiedTime desc",
+  page_size=50
+)
+# Returns: list of { id, name, mimeType, modifiedTime, owners, webViewLink }
+
+# Fetch file content (up to 10 IDs per call)
+google_drive_fetch(document_ids=["<fileId>", ...])
+# Returns: text content of each file directly
+```
+
+Set `source='google_drive'` and `source_id='<fileId>'` when passing to
+`doc-radar-cowork:doc-extractor`.
+
+---
+
 ## Junk and Promotional Filter — SKIP ENTIRELY
 
 Do NOT process any email or document matching these patterns.
@@ -140,6 +164,7 @@ Fire this skill automatically when:
 2. A file is written to `~/legal-inbox/` (PostToolUse hook fires)
 3. User pastes document content or uploads a file directly in conversation
 4. Context contains phrases like "check contracts", "any new invoices", "process docs"
+5. SessionStart hook output contains Google Drive scan results
 
 ---
 
