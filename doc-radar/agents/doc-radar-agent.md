@@ -1,8 +1,9 @@
 ---
 name: doc-radar-agent
 description: >
-  Orchestrating agent for the doc-radar plugin. Chains legal-doc-detector →
-  doc-extractor → deadline-scheduler in a single autonomous workflow. Invoke
+  Orchestrating agent for the doc-radar plugin. Chains
+  doc-radar:legal-doc-detector → doc-radar:doc-extractor →
+  doc-radar:deadline-scheduler in a single autonomous workflow. Invoke
   when the user says "run doc radar", "check for new documents", or when
   SessionStart hook output needs processing. Handles multiple documents in a
   single pass and reports a final summary.
@@ -20,19 +21,20 @@ document detection, extraction, and scheduling pipeline end-to-end.
    For each: resume from their current stage (extracted -> schedule;
    detected -> extract then schedule).
 
-2. **Receive scan context** — from SessionStart hook output (Gmail scan
-   results) or a direct user request with document content/paths.
+2. **Receive scan context** — from SessionStart hook output (Gmail **and
+   Google Drive** scan results via gmail_scan.py) or a direct user request
+   with document content/paths.
 
-3. **Run legal-doc-detector** on all items. Separate into:
+3. **Invoke `doc-radar:legal-doc-detector`** on all items. Separate into:
    - `to_process[]` — items that pass the legal doc test
    - `skipped_junk[]` — items filtered as promotional/noise
 
 4. **For each item in `to_process[]`**, run in sequence:
-   a. `doc-extractor` — uses `hash_check.py --check-only` to detect duplicates,
+   a. `doc-radar:doc-extractor` — uses `hash_check.py --check-only` to detect duplicates,
       extracts fields, writes run log entry, writes `detected` checkpoint
    b. If duplicate: note it, log to skipped.jsonl, continue to next item
    c. If new: update checkpoint to `extracted`
-   d. `deadline-scheduler` — create calendar events via gws, then:
+   d. `doc-radar:deadline-scheduler` — create calendar events via gws, then:
       - Record hash permanently via `hash_check.py` (without --check-only)
       - Write `complete` checkpoint
       - Update run log with event IDs
@@ -46,7 +48,8 @@ document detection, extraction, and scheduling pipeline end-to-end.
    ```
    Doc Radar scan complete — [ISO date]
    ─────────────────────────────────────
-   Emails/files scanned   : N
+   Gmail messages scanned : N
+   Drive files scanned    : N
    Legal docs detected    : N
    New docs processed     : N
    Duplicates skipped     : N
@@ -64,7 +67,8 @@ document detection, extraction, and scheduling pipeline end-to-end.
 ## Error Handling
 
 - If hash_check.py --check-only fails: log to errors.jsonl, skip that doc
-- If doc-extractor fails: write `detected` checkpoint with error, log, continue
+- If `doc-radar:doc-extractor` fails: write `detected` checkpoint with error, log, continue
+- If `gws drive files get` fails for a file: log to errors.jsonl with `source_id` and filename, skip that file, continue with remaining Drive files
 - If `gws calendar events insert` fails: write `scheduled` checkpoint with error,
   log to errors.jsonl, mark run log `status: "calendar_error"`, do NOT record
   hash, continue processing others
@@ -83,6 +87,8 @@ document detection, extraction, and scheduling pipeline end-to-end.
   - `gws gmail users messages modify` — label processed emails
   - `gws calendar events list` — duplicate event check before creating
   - `gws calendar events insert` — create deadline/reminder events
+  - `gws drive files list` — list legal document candidates (supply Drive query from `build_drive_query()` in gmail_scan.py)
+  - `gws drive files get --params '{"fileId":"<id>","alt":"media"}'` — download file to `/tmp/drive-<id>.<ext>`; use `Read` tool on the downloaded path for text extraction
   - Always use `--dry-run` first on insert/modify operations
 - **Read** — read attachment content from `~/legal-inbox/`
 - **Python scripts** (via Bash):
