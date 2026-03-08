@@ -15,7 +15,7 @@ description: >
 Read a legal or financial document (email body, PDF text, DOCX content, or
 raw text), extract all structured fields, compute the content hash for
 deduplication, check the hash against the seen-hashes log, and either proceed
-to `doc-radar:deadline-scheduler` or abort as a duplicate.
+to `doc-radar-cowork:deadline-scheduler` or abort as a duplicate.
 
 ---
 
@@ -180,7 +180,7 @@ Append the extracted record to `.tracker/runs.jsonl`:
 }
 ```
 
-Leave `calendar_event_ids` as an empty array — `doc-radar:deadline-scheduler` will
+Leave `calendar_event_ids` as an empty array — `doc-radar-cowork:deadline-scheduler` will
 populate this after creating events.
 
 ---

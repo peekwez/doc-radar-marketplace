@@ -28,7 +28,7 @@ Read `.tracker/runs.jsonl` using the `Read` tool
 Find the matching record(s).
 
 If no match:
-> "No record found matching '[query]'. Run /doc-radar:digest to see available records."
+> "No record found matching '[query]'. Run /doc-radar-cowork:digest to see available records."
 
 ---
 
