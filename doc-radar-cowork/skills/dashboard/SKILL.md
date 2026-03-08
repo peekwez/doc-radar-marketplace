@@ -14,4 +14,4 @@ Then report:
 > "Dashboard generated at `.tracker/dashboard.html` and opened in your browser."
 
 If the script fails (e.g. Python not found or runs.jsonl missing), report the
-error and suggest running a Gmail scan first: invoke `doc-radar:legal-doc-detector`.
+error and suggest running a Gmail scan first: invoke `doc-radar-cowork:legal-doc-detector`.

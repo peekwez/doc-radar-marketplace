@@ -74,7 +74,7 @@ def test_retry_output_uses_namespaced_skills(tmp_path, monkeypatch, capsys):
     monkeypatch.setenv("RETRY_TRACKER_DIR", str(tmp_path))
     retry.main()
     out = capsys.readouterr().out
-    assert "doc-radar:doc-extractor" in out
-    assert "doc-radar:deadline-scheduler" in out
+    assert "doc-radar-cowork:doc-extractor" in out
+    assert "doc-radar-cowork:deadline-scheduler" in out
     assert "DO NOT run scripts directly" in out
     assert "-> deadline-scheduler ->" not in out
