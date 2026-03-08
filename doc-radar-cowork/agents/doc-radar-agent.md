@@ -16,6 +16,15 @@ native MCP connectors — no CLI or external tools required.
 
 ## Workflow
 
+> **MANDATORY:** The skill chain MUST be invoked in full for every document that
+> passes detection. Do NOT inline any logic from these skills or skip any step.
+> The only permitted short-circuits are:
+> - Stop after `doc-radar-cowork:legal-doc-detector` if the item is junk (filtered out)
+> - Stop after `doc-radar-cowork:doc-extractor` if the item is a duplicate hash
+>
+> For every non-duplicate legal document, all three skills MUST run:
+> `doc-radar-cowork:legal-doc-detector` → `doc-radar-cowork:doc-extractor` → `doc-radar-cowork:deadline-scheduler`
+
 1. **Check for retry items** — if the SessionStart hook output contains a
    "DOC RADAR: Pending Retry Items" section, process those items first.
    For each: resume from their current stage (extracted → schedule;
@@ -29,18 +38,25 @@ native MCP connectors — no CLI or external tools required.
    - `to_process[]` — items that pass the legal doc test
    - `skipped_junk[]` — items filtered as promotional/noise
 
-4. **For each item in `to_process[]`**, run in sequence:
-   a. `doc-radar-cowork:doc-extractor` — uses `hash_check.py --check-only` to detect duplicates,
-      extracts fields, writes run log entry, writes `detected` checkpoint
-   b. If duplicate: note it, log to skipped.jsonl, continue to next item
-   c. If new: update checkpoint to `extracted`
-   d. `doc-radar-cowork:deadline-scheduler` — create calendar events via `gcal_create_event`,
-      then:
-      - Record hash permanently via `hash_check.py` (without --check-only)
-      - Write `complete` checkpoint
-      - Update run log with event IDs
-   e. If calendar creation fails: write `scheduled` checkpoint with error,
-      do NOT record hash — item will surface for retry next session
+4. **For each item in `to_process[]`**, run ALL steps in sequence — do not skip:
+
+   **Step A — INVOKE `doc-radar-cowork:doc-extractor`** (mandatory)
+   - Runs `hash_check.py --check-only` to detect duplicates
+   - Extracts all structured fields
+   - Writes run log entry and `detected` checkpoint
+   - If duplicate → log to skipped.jsonl, **stop here for this item**
+   - If new → update checkpoint to `extracted`, continue to Step B
+
+   **Step B — INVOKE `doc-radar-cowork:deadline-scheduler`** (mandatory for all non-duplicates)
+   - Creates calendar events via `gcal_create_event`
+   - Records hash permanently via `hash_check.py` (without --check-only)
+   - Writes `complete` checkpoint
+   - Updates run log with event IDs
+   - If calendar creation fails → write `scheduled` checkpoint with error,
+     do NOT record hash — item will surface for retry next session
+
+   **Self-check before moving to next item:** Both Step A and Step B were invoked
+   (or the item was legitimately stopped at Step A as a duplicate).
 
 5. **After ALL documents processed**, update `state.json`:
    Set `last_scan_completed` to current ISO timestamp.
@@ -64,6 +80,11 @@ native MCP connectors — no CLI or external tools required.
    ```
    -> [doc_type] | [doc_ref] | [issuer] / [recipient] | Expires/Due/Renews: [date]
    ```
+
+8. **Invoke `doc-radar-cowork:dashboard`** — generate and open the HTML dashboard
+   so the user can see all processed documents visually.
+   - This is mandatory after every run, including runs where 0 new documents were found.
+   - If the dashboard skill fails, report the error but do not retry — the run is still complete.
 
 ## Error Handling
 
