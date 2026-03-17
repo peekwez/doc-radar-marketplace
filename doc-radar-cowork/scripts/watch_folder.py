@@ -29,7 +29,7 @@ SUPPORTED_EXTENSIONS = {
 }
 
 PLUGIN_DIR  = Path(__file__).parent.parent
-TRACKER_DIR = PLUGIN_DIR / ".tracker"
+TRACKER_DIR = Path(os.environ.get("DOC_RADAR_TRACKER_DIR", str(Path.home() / ".doc-radar")))
 ERROR_LOG   = TRACKER_DIR / "errors.jsonl"
 
 

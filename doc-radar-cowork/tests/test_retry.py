@@ -8,7 +8,7 @@ SCRIPT = Path(__file__).parent.parent / "scripts" / "retry.py"
 
 
 def run_retry(tmp_path: Path) -> str:
-    env = {"RETRY_TRACKER_DIR": str(tmp_path), "PATH": "/usr/bin:/bin"}
+    env = {"DOC_RADAR_TRACKER_DIR": str(tmp_path), "PATH": "/usr/bin:/bin"}
     result = subprocess.run(
         [sys.executable, str(SCRIPT)],
         capture_output=True, text=True, env=env
@@ -65,14 +65,17 @@ def test_latest_record_per_run_id_wins(tmp_path):
 
 
 def test_retry_output_uses_namespaced_skills(tmp_path, monkeypatch, capsys):
-    import retry
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("retry_cowork", SCRIPT)
+    retry_mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(retry_mod)
     write_pending(tmp_path, [
         {"_type": "checkpoint", "run_id": "abc123", "sha256": "abc", "doc_ref": "INV-001",
          "source_id": "gmail:msgid", "stage": "extracted",
          "timestamp": "2026-03-06T00:00:00+00:00", "error": None},
     ])
-    monkeypatch.setenv("RETRY_TRACKER_DIR", str(tmp_path))
-    retry.main()
+    monkeypatch.setenv("DOC_RADAR_TRACKER_DIR", str(tmp_path))
+    retry_mod.main()
     out = capsys.readouterr().out
     assert "doc-radar-cowork:doc-extractor" in out
     assert "doc-radar-cowork:deadline-scheduler" in out

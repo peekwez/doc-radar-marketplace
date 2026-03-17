@@ -12,6 +12,7 @@ Usage:
 """
 import argparse
 import json
+import os
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -21,7 +22,7 @@ sys.path.insert(0, str(SCRIPT_DIR))
 import jsonl_utils as ju
 
 PLUGIN_DIR  = SCRIPT_DIR.parent
-TRACKER_DIR = PLUGIN_DIR / ".tracker"
+TRACKER_DIR = Path(os.environ.get("DOC_RADAR_TRACKER_DIR", str(Path.home() / ".doc-radar")))
 RUNS_LOG    = TRACKER_DIR / "runs.jsonl"
 ERROR_LOG   = TRACKER_DIR / "errors.jsonl"
 

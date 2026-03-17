@@ -16,7 +16,7 @@ def test_check_only_does_not_record(tmp_path):
     result = subprocess.run(
         [sys.executable, str(SCRIPT), "--file", str(content_file), "--check-only"],
         capture_output=True, text=True,
-        env={"HASH_CHECK_TRACKER_DIR": str(tmp_path), "PATH": "/usr/bin:/bin"}
+        env={"DOC_RADAR_TRACKER_DIR": str(tmp_path), "PATH": "/usr/bin:/bin"}
     )
     output = json.loads(result.stdout)
     assert output["status"] == "new"
@@ -27,7 +27,7 @@ def test_check_only_detects_existing_duplicate(tmp_path):
     """--check-only correctly identifies a previously recorded hash."""
     content_file = tmp_path / "doc.txt"
     content_file.write_text("duplicate content xyz")
-    env = {"HASH_CHECK_TRACKER_DIR": str(tmp_path), "PATH": "/usr/bin:/bin"}
+    env = {"DOC_RADAR_TRACKER_DIR": str(tmp_path), "PATH": "/usr/bin:/bin"}
 
     # First: record without --check-only
     subprocess.run(
@@ -49,7 +49,7 @@ def test_normal_mode_records_hash(tmp_path):
     hashes_file = tmp_path / "seen_hashes.jsonl"
     content_file = tmp_path / "doc.txt"
     content_file.write_text("recordable content 999")
-    env = {"HASH_CHECK_TRACKER_DIR": str(tmp_path), "PATH": "/usr/bin:/bin"}
+    env = {"DOC_RADAR_TRACKER_DIR": str(tmp_path), "PATH": "/usr/bin:/bin"}
 
     result = subprocess.run(
         [sys.executable, str(SCRIPT), "--file", str(content_file)],

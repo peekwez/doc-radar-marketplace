@@ -8,7 +8,7 @@ SCRIPT = Path(__file__).parent.parent / "scripts" / "checkpoint.py"
 
 
 def run_checkpoint(args: list[str], tmp_path: Path) -> dict:
-    env = {"CHECKPOINT_TRACKER_DIR": str(tmp_path), "PATH": "/usr/bin:/bin"}
+    env = {"DOC_RADAR_TRACKER_DIR": str(tmp_path), "PATH": "/usr/bin:/bin"}
     result = subprocess.run(
         [sys.executable, str(SCRIPT)] + args,
         capture_output=True, text=True, env=env

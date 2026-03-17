@@ -62,7 +62,9 @@ When an attachment is the likely primary document:
 2. If the body alone passes → process as normal.
 3. If the body alone fails but the attachment filename strongly suggests
    a legal doc (e.g. `MSA_2026.pdf`, `Invoice_INV-001.pdf`):
-   → Log to `.tracker/skipped.jsonl` with `skip_reason: "attachment_not_downloadable"`
+> Tracker files are stored in `~/.doc-radar/` (created automatically on first use). Override with the `DOC_RADAR_TRACKER_DIR` environment variable.
+
+   → Log to `~/.doc-radar/skipped.jsonl` with `skip_reason: "attachment_not_downloadable"`
    → Do NOT invoke doc-extractor for this item.
 
 Files dropped into `~/legal-inbox/` (watch_folder.py trigger) are
@@ -125,7 +127,7 @@ When in doubt, apply this test. ALL three must be present:
 2. **Financial obligation** — $500+ one-time amount, OR any recurring amount at any dollar level (a $9/month SaaS subscription qualifies)
 3. **Actionable date** — an expiry, due date, renewal date, cancel-by date, or delivery deadline
 
-If any signal is missing, skip and log to `.tracker/skipped.jsonl` with the missing signal noted.
+If any signal is missing, skip and log to `~/.doc-radar/skipped.jsonl` with the missing signal noted.
 
 **Subscription renewal special case:** A renewal email from a named vendor with a dollar amount and a renewal/cancel-by date passes all three signals and MUST be processed as `subscription_renewal` doc type.
 
@@ -144,7 +146,7 @@ dropped into `~/legal-inbox/` (watched folder path):
    attachment text to `doc-radar-cowork:doc-extractor` as the document content.
 
 If the `Read` tool cannot extract text (binary-only, encrypted, or corrupted
-file), log to `.tracker/skipped.jsonl`:
+file), log to `~/.doc-radar/skipped.jsonl`:
 ```json
 {
   "timestamp": "<ISO 8601 UTC>",

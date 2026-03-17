@@ -34,7 +34,9 @@ The script returns one of two responses:
 - `{"status": "new", "hash": "<sha256>"}` — proceed with extraction
 - `{"status": "duplicate", "hash": "<sha256>", "first_seen": "<ISO datetime>", "source_id": "<id>"}` — abort, do not process again
 
-If duplicate: log to `.tracker/skipped.jsonl` with `skip_reason: "duplicate_hash"` and stop.
+> Tracker files are stored in `~/.doc-radar/` (created automatically on first use). Override with the `DOC_RADAR_TRACKER_DIR` environment variable.
+
+If duplicate: log to `~/.doc-radar/skipped.jsonl` with `skip_reason: "duplicate_hash"` and stop.
 
 Do NOT record the hash yet — it is recorded permanently only after successful calendar creation in doc-radar-cowork:deadline-scheduler (Step 5b).
 
@@ -72,7 +74,6 @@ uncertain, use `null` and note it in `extraction_notes`.
   "source_id": "gmail message ID, Drive file ID, full file path, or 'user_paste'",
   "sha256": "<computed hash from Step 1>",
   "extraction_notes": "any caveats, ambiguities, or low-confidence fields noted here",
-  "renewal_date":    "YYYY-MM-DD or null",
   "cancel_by_date":  "YYYY-MM-DD or null",
   "billing_cycle":   "monthly | annual | quarterly | null",
   "billing_method":  "credit card | ACH | PayPal | check | wire | null",
@@ -157,7 +158,7 @@ completes the pipeline cleanly.
 
 ## Step 3 — Write to Run Log
 
-Append the extracted record to `.tracker/runs.jsonl`:
+Append the extracted record to `~/.doc-radar/runs.jsonl`:
 
 ```json
 {

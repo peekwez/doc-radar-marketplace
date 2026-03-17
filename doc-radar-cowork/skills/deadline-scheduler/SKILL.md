@@ -90,8 +90,7 @@ gcal_list_events(
   calendarId="primary",
   q="<doc_ref>",
   timeMin="<today RFC3339>",
-  timeMax="<expiry_date + 180 days RFC3339>",
-  condenseEventDetails=true
+  timeMax="<expiry_date + 180 days RFC3339>"
 )
 ```
 
@@ -426,13 +425,15 @@ python3 ${CLAUDE_SKILL_DIR}/../../scripts/checkpoint.py \
   --stage complete
 ```
 
+> Tracker files are stored in `~/.doc-radar/` (created automatically on first use). Override with the `DOC_RADAR_TRACKER_DIR` environment variable.
+
 **5d — Update state.json last_scan_completed** (after ALL documents in the session are done):
 ```bash
 python3 -c "
 import json
 from pathlib import Path
 from datetime import datetime, timezone
-f = Path('${CLAUDE_SKILL_DIR}/../../.tracker/state.json')
+f = Path('~/.doc-radar/state.json')
 s = json.loads(f.read_text())
 s['last_scan_completed'] = datetime.now(timezone.utc).isoformat()
 f.write_text(json.dumps(s, indent=2))
@@ -445,7 +446,7 @@ print('state.json updated')
 ## Step 6 — Error Handling
 
 If `gcal_create_event` fails:
-1. Log to `.tracker/errors.jsonl`
+1. Log to `~/.doc-radar/errors.jsonl`
 2. Update run log entry: `status: "calendar_error"`
 3. Update checkpoint to `stage: scheduled` with the error message (NOT complete)
 4. Do NOT record the hash — retry next session

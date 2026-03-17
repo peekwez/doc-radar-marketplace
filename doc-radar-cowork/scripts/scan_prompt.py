@@ -14,13 +14,14 @@ into Claude's context.
 """
 
 import json
+import os
 import sys
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
 # ── Paths ─────────────────────────────────────────────────────────────────────
 PLUGIN_DIR  = Path(__file__).parent.parent
-TRACKER_DIR = PLUGIN_DIR / ".tracker"
+TRACKER_DIR = Path(os.environ.get("DOC_RADAR_TRACKER_DIR", str(Path.home() / ".doc-radar")))
 STATE_FILE  = TRACKER_DIR / "state.json"
 ERROR_LOG   = TRACKER_DIR / "errors.jsonl"
 

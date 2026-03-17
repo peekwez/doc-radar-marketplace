@@ -23,8 +23,10 @@ Match by any of:
 - `sha256` prefix (first 12 characters)
 - `source_id` (Gmail message ID or file path)
 
-Read `.tracker/runs.jsonl` using the `Read` tool
-(`${CLAUDE_SKILL_DIR}/../../.tracker/runs.jsonl`).
+> Tracker files are stored in `~/.doc-radar/` (created automatically on first use). Override with the `DOC_RADAR_TRACKER_DIR` environment variable.
+
+Read `~/.doc-radar/runs.jsonl` using the `Read` tool
+(`~/.doc-radar/runs.jsonl`).
 Find the matching record(s).
 
 If no match:

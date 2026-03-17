@@ -34,7 +34,9 @@ The script returns one of two responses:
 - `{"status": "new", "hash": "<sha256>"}` — proceed with extraction
 - `{"status": "duplicate", "hash": "<sha256>", "first_seen": "<ISO datetime>", "source_id": "<id>"}` — abort, do not process again
 
-If duplicate: log to `.tracker/skipped.jsonl` with `skip_reason: "duplicate_hash"` and stop.
+> Tracker files are stored in `~/.doc-radar/` (created automatically on first use). Override with the `DOC_RADAR_TRACKER_DIR` environment variable.
+
+If duplicate: log to `~/.doc-radar/skipped.jsonl` with `skip_reason: "duplicate_hash"` and stop.
 
 Do NOT record the hash yet — it is recorded permanently only after successful calendar creation in doc-radar:deadline-scheduler (Step 5b).
 
@@ -157,7 +159,7 @@ completes the pipeline cleanly.
 
 ## Step 3 — Write to Run Log
 
-Append the extracted record to `.tracker/runs.jsonl`:
+Append the extracted record to `~/.doc-radar/runs.jsonl`:
 
 ```json
 {

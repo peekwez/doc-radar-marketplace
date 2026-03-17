@@ -24,7 +24,7 @@ sys.path.insert(0, str(SCRIPT_DIR))
 import jsonl_utils as ju
 
 PLUGIN_DIR   = SCRIPT_DIR.parent
-TRACKER_DIR  = Path(os.environ.get("CHECKPOINT_TRACKER_DIR", str(PLUGIN_DIR / ".tracker")))
+TRACKER_DIR  = Path(os.environ.get("DOC_RADAR_TRACKER_DIR", str(Path.home() / ".doc-radar")))
 PENDING_LOG  = TRACKER_DIR / "pending.jsonl"
 VALID_STAGES = {"detected", "extracted", "scheduled", "complete"}
 
