@@ -121,7 +121,9 @@ When in doubt, apply this test. ALL three must be present:
 2. **Financial obligation** — $500+ one-time amount, OR any recurring amount at any dollar level (a $9/month SaaS subscription qualifies)
 3. **Actionable date** — an expiry, due date, renewal date, cancel-by date, or delivery deadline
 
-If any signal is missing, skip and log to `.tracker/skipped.jsonl` with the missing signal noted.
+> Tracker files are stored in `~/.doc-radar/` (created automatically on first use). Override with the `DOC_RADAR_TRACKER_DIR` environment variable.
+
+If any signal is missing, skip and log to `~/.doc-radar/skipped.jsonl` with the missing signal noted.
 
 **Subscription renewal special case:** A renewal email from a named vendor with a dollar amount and a renewal/cancel-by date passes all three signals and MUST be processed as `subscription_renewal` doc type.
 
@@ -140,7 +142,7 @@ path (e.g. `/tmp/attachment_<msgId>.pdf`):
    attachment text to `doc-radar:doc-extractor` as the document content.
 
 If the `Read` tool cannot extract text (binary-only, encrypted, or corrupted
-file), log to `.tracker/skipped.jsonl`:
+file), log to `~/.doc-radar/skipped.jsonl`:
 ```json
 {
   "timestamp": "<ISO 8601 UTC>",

@@ -4,8 +4,10 @@ description: Show a summary of upcoming deadlines from the doc-radar run log. Us
 disable-model-invocation: true
 ---
 
-Read `.tracker/runs.jsonl` using the `Read` tool (path relative to plugin root:
-`${CLAUDE_SKILL_DIR}/../../.tracker/runs.jsonl`).
+> Tracker files are stored in `~/.doc-radar/` (created automatically on first use). Override with the `DOC_RADAR_TRACKER_DIR` environment variable.
+
+Read `~/.doc-radar/runs.jsonl` using the `Read` tool (path:
+`~/.doc-radar/runs.jsonl`).
 
 Filter records: exclude `status` values of `"duplicate_hash"`,
 `"calendar_duplicate_skipped"`, and `"archived"`.

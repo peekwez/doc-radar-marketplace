@@ -25,7 +25,7 @@ PLUGIN_DIR  = SCRIPT_DIR.parent
 
 def main():
     # Re-resolve tracker dir at call time so monkeypatching env works in tests
-    tracker_dir = Path(os.environ.get("RETRY_TRACKER_DIR", str(PLUGIN_DIR / ".tracker")))
+    tracker_dir = Path(os.environ.get("DOC_RADAR_TRACKER_DIR", str(Path.home() / ".doc-radar")))
     pending_log = tracker_dir / "pending.jsonl"
 
     # Resolve latest stage per run_id — later appends win

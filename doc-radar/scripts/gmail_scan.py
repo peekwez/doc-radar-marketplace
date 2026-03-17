@@ -19,7 +19,7 @@ from pathlib import Path
 
 # ── Paths ─────────────────────────────────────────────────────────────────────
 PLUGIN_DIR  = Path(__file__).parent.parent
-TRACKER_DIR = PLUGIN_DIR / ".tracker"
+TRACKER_DIR = Path(os.environ.get("DOC_RADAR_TRACKER_DIR", str(Path.home() / ".doc-radar")))
 STATE_FILE  = TRACKER_DIR / "state.json"
 RUNS_LOG    = TRACKER_DIR / "runs.jsonl"
 SKIP_LOG    = TRACKER_DIR / "skipped.jsonl"

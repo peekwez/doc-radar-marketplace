@@ -8,7 +8,7 @@ SCRIPT = Path(__file__).parent.parent / "scripts" / "retry.py"
 
 
 def run_retry(tmp_path: Path) -> str:
-    env = {"RETRY_TRACKER_DIR": str(tmp_path), "PATH": "/usr/bin:/bin"}
+    env = {"DOC_RADAR_TRACKER_DIR": str(tmp_path), "PATH": "/usr/bin:/bin"}
     result = subprocess.run(
         [sys.executable, str(SCRIPT)],
         capture_output=True, text=True, env=env
@@ -71,7 +71,7 @@ def test_retry_output_uses_namespaced_skills(tmp_path, monkeypatch, capsys):
          "source_id": "gmail:msgid", "stage": "extracted",
          "timestamp": "2026-03-06T00:00:00+00:00", "error": None},
     ])
-    monkeypatch.setenv("RETRY_TRACKER_DIR", str(tmp_path))
+    monkeypatch.setenv("DOC_RADAR_TRACKER_DIR", str(tmp_path))
     retry.main()
     out = capsys.readouterr().out
     assert "doc-radar:doc-extractor" in out

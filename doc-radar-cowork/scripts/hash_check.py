@@ -26,13 +26,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 PLUGIN_DIR   = Path(__file__).parent.parent
-TRACKER_DIR  = PLUGIN_DIR / ".tracker"
-HASHES_LOG   = TRACKER_DIR / "seen_hashes.jsonl"
-
-_env_tracker = os.environ.get("HASH_CHECK_TRACKER_DIR")
-if _env_tracker:
-    TRACKER_DIR = Path(_env_tracker)
-    HASHES_LOG  = TRACKER_DIR / "seen_hashes.jsonl"
+TRACKER_DIR = Path(os.environ.get("DOC_RADAR_TRACKER_DIR", str(Path.home() / ".doc-radar")))
+HASHES_LOG  = TRACKER_DIR / "seen_hashes.jsonl"
 
 TRACKER_DIR.mkdir(parents=True, exist_ok=True)
 
